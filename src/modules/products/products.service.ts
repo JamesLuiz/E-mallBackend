@@ -12,7 +12,7 @@ export class ProductsService {
     private vendorsService: VendorsService,
   ) {}
 
-  async create(userId: string, createProductDto: CreateProductDto): Promise<Product> {
+  async create(userId: string, createProductDto: CreateProductDto): Promise<ProductDocument> {
     // Get vendor profile to ensure user is a vendor
     const vendor = await this.vendorsService.findByUserId(userId);
     
@@ -23,7 +23,7 @@ export class ProductsService {
     return createdProduct.save();
   }
 
-  async findAll(query: any = {}): Promise<Product[]> {
+  async findAll(query: any = {}): Promise<ProductDocument[]> {
     const filter = { isActive: true, ...query };
     return this.productModel
       .find(filter)
@@ -31,7 +31,7 @@ export class ProductsService {
       .exec();
   }
 
-  async findOne(id: string): Promise<Product> {
+  async findOne(id: string): Promise<ProductDocument> {
     const product = await this.productModel
       .findOne({ _id: id, isActive: true })
       .populate('vendorId', 'businessName storeSettings rating')
@@ -43,19 +43,19 @@ export class ProductsService {
     return product;
   }
 
-  async findByVendor(vendorId: string): Promise<Product[]> {
+  async findByVendor(vendorId: string): Promise<ProductDocument[]> {
     return this.productModel
       .find({ vendorId, isActive: true })
       .populate('vendorId', 'businessName')
       .exec();
   }
 
-  async findByCurrentVendor(userId: string): Promise<Product[]> {
+  async findByCurrentVendor(userId: string): Promise<ProductDocument[]> {
     const vendor = await this.vendorsService.findByUserId(userId);
     return this.productModel.find({ vendorId: vendor._id }).exec();
   }
 
-  async update(id: string, userId: string, updateProductDto: Partial<CreateProductDto>): Promise<Product> {
+  async update(id: string, userId: string, updateProductDto: Partial<CreateProductDto>): Promise<ProductDocument> {
     const product = await this.findOne(id);
     const vendor = await this.vendorsService.findByUserId(userId);
     
@@ -84,7 +84,7 @@ export class ProductsService {
     await this.productModel.findByIdAndUpdate(id, { isActive: false }).exec();
   }
 
-  async search(searchTerm: string): Promise<Product[]> {
+  async search(searchTerm: string): Promise<ProductDocument[]> {
     return this.productModel
       .find({
         isActive: true,

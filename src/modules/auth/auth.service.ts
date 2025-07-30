@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { UserDocument } from '../users/schemas/user.schema';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -45,7 +46,7 @@ export class AuthService {
     };
   }
 
-  async register(createUserDto: CreateUserDto) {
+  async register(createUserDto: CreateUserDto): Promise<any> {
     const user = await this.usersService.create(createUserDto);
     const { password, ...result } = user.toObject();
     return result;
@@ -54,7 +55,7 @@ export class AuthService {
   async refreshToken(token: string) {
     try {
       const payload = this.jwtService.verify(token);
-      const user = await this.usersService.findOne(payload.sub);
+      const user = await this.usersService.findOneDocument(payload.sub);
       
       const newPayload = { email: user.email, sub: user._id, role: user.role };
       const accessToken = this.jwtService.sign(newPayload);

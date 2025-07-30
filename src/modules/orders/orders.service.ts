@@ -16,7 +16,7 @@ export class OrdersService {
     private vendorsService: VendorsService,
   ) {}
 
-  async create(userId: string, createOrderDto: CreateOrderDto): Promise<Order> {
+  async create(userId: string, createOrderDto: CreateOrderDto): Promise<OrderDocument> {
     // Validate and calculate order items
     const orderItems = [];
     let totalAmount = 0;
@@ -79,7 +79,7 @@ export class OrdersService {
     return savedOrder;
   }
 
-  async findAll(): Promise<Order[]> {
+  async findAll(): Promise<OrderDocument[]> {
     return this.orderModel
       .find()
       .populate('customerId', 'email profile')
@@ -88,7 +88,7 @@ export class OrdersService {
       .exec();
   }
 
-  async findByCustomer(customerId: string): Promise<Order[]> {
+  async findByCustomer(customerId: string): Promise<OrderDocument[]> {
     return this.orderModel
       .find({ customerId })
       .populate('vendorId', 'businessName storeSettings')
@@ -97,7 +97,7 @@ export class OrdersService {
       .exec();
   }
 
-  async findByVendor(userId: string): Promise<Order[]> {
+  async findByVendor(userId: string): Promise<OrderDocument[]> {
     const vendor = await this.vendorsService.findByUserId(userId);
     return this.orderModel
       .find({ vendorId: vendor._id })
@@ -107,7 +107,7 @@ export class OrdersService {
       .exec();
   }
 
-  async findOne(id: string): Promise<Order> {
+  async findOne(id: string): Promise<OrderDocument> {
     const order = await this.orderModel
       .findById(id)
       .populate('customerId', 'email profile')
@@ -121,7 +121,7 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, status: OrderStatus, userId: string): Promise<Order> {
+  async updateStatus(id: string, status: OrderStatus, userId: string): Promise<OrderDocument> {
     const order = await this.findOne(id);
     const vendor = await this.vendorsService.findByUserId(userId);
 
@@ -140,7 +140,7 @@ export class OrdersService {
     return updatedOrder;
   }
 
-  async cancel(id: string, userId: string): Promise<Order> {
+  async cancel(id: string, userId: string): Promise<OrderDocument> {
     const order = await this.findOne(id);
 
     // Check if the order belongs to the current customer
@@ -174,7 +174,7 @@ export class OrdersService {
     };
   }
 
-  private async updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
+  private async updateOrderStatus(id: string, status: OrderStatus): Promise<OrderDocument> {
     return this.orderModel
       .findByIdAndUpdate(id, { status }, { new: true })
       .populate('customerId', 'email profile')
