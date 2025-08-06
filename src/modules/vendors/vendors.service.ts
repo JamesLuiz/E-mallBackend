@@ -3,6 +3,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Vendor, VendorDocument } from './schemas/vendor.schema';
 import { CreateVendorDto } from './dto/create-vendor.dto';
+import { VendorBioDto } from './dto/vendor-bio.dto';
+import { VendorCompanyDto } from './dto/vendor-company.dto';
+import { VendorKycDto } from './dto/vendor-kyc.dto';
 
 @Injectable()
 export class VendorsService {
@@ -36,7 +39,7 @@ export class VendorsService {
     return vendor;
   }
 
-  async findByUserId(userId: string): Promise<Vendor> {
+  async findByUserId(userId: string): Promise<VendorDocument> {
     const vendor = await this.vendorModel.findOne({ userId }).populate('userId', 'email profile').exec();
     if (!vendor) {
       throw new NotFoundException('Vendor profile not found');
@@ -96,6 +99,49 @@ export class VendorsService {
         customerInsights: [],
         revenueBreakdown: [],
       },
+    };
+  }
+
+  async kycBioData(userId: string, bioDto: VendorBioDto) {
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      { $set: bioDto },
+      { new: true },
+    );
+    if (!vendor) throw new NotFoundException('Vendor not found');
+    return vendor;
+  }
+
+  async kycCompanyInfo(userId: string, companyDto: VendorCompanyDto) {
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      { $set: { bankDetails: companyDto.bankDetails } },
+      { new: true },
+    );
+    if (!vendor) throw new NotFoundException('Vendor not found');
+    return vendor;
+  }
+
+  async kycDocuments(userId: string, files: Array<Express.Multer.File>, kycDto: VendorKycDto) {
+    // TODO: Integrate with uploads service/cloud storage
+    // For now, just mock file URLs
+    const fileUrls = files.map(f => `uploads/kyc/${f.filename || f.originalname}`);
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      { $set: { kycDocuments: { ...kycDto, files: fileUrls } } },
+      { new: true },
+    );
+    if (!vendor) throw new NotFoundException('Vendor not found');
+    return vendor;
+  }
+
+  async getVendorProducts(vendorId: string, query: { page?: number; limit?: number; status?: string; category?: string }) {
+    // TODO: Integrate with products service/model
+    // For now, return mock data
+    return {
+      vendorId,
+      products: [],
+      pagination: { page: query.page || 1, limit: query.limit || 10, total: 0 },
     };
   }
 }

@@ -108,4 +108,28 @@ export class ProductsService {
       { $inc: { 'inventory.stock': -quantity } },
     ).exec();
   }
+
+  async uploadImages(productId: string, userId: string, files: Array<Express.Multer.File>) {
+    // TODO: Integrate with uploads service/cloud storage
+    // For now, just mock file URLs
+    const imageUrls = files.map(f => `uploads/products/${f.filename || f.originalname}`);
+    const product = await this.findOne(productId);
+    const vendor = await this.vendorsService.findByUserId(userId);
+    if (product.vendorId.toString() !== vendor._id.toString()) {
+      throw new ForbiddenException('You can only update your own products');
+    }
+    product.images = [...(product.images || []), ...imageUrls];
+    await product.save();
+    return product;
+  }
+
+  async getFeatured(): Promise<ProductDocument[]> {
+    // TODO: Implement real featured logic
+    return this.productModel.find({ featured: true, isActive: true }).exec();
+  }
+
+  async getTrending(): Promise<ProductDocument[]> {
+    // TODO: Implement real trending logic
+    return this.productModel.find({ isActive: true }).sort({ sales: -1 }).limit(10).exec();
+  }
 }

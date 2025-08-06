@@ -6,7 +6,12 @@ import {
   Body,
   Param,
   UseGuards,
+  UploadedFile,
+  UploadedFiles,
+  UseInterceptors,
+  Query,
 } from '@nestjs/common';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -15,6 +20,9 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
+import { VendorBioDto } from './dto/vendor-bio.dto';
+import { VendorCompanyDto } from './dto/vendor-company.dto';
+import { VendorKycDto } from './dto/vendor-kyc.dto';
 
 @ApiTags('Vendors')
 @ApiBearerAuth()
@@ -54,7 +62,7 @@ export class VendorsController {
     @Body() updateVendorDto: Partial<CreateVendorDto>,
   ) {
     const vendor = await this.vendorsService.findByUserId(userId);
-    return this.vendorsService.update(vendor._id.toString(), updateVendorDto);
+    return this.vendorsService.update((vendor as any)._id.toString(), updateVendorDto);
   }
 
   @Get('dashboard')
@@ -82,5 +90,46 @@ export class VendorsController {
   @ApiOperation({ summary: 'Get vendor by ID' })
   findOne(@Param('id') id: string) {
     return this.vendorsService.findOne(id);
+  }
+
+  @Post('kyc/bio-data')
+  @ApiOperation({ summary: 'Submit vendor KYC bio-data' })
+  async kycBioData(
+    @CurrentUser('_id') userId: string,
+    @Body() bioDto: VendorBioDto,
+  ) {
+    return this.vendorsService.kycBioData(userId, bioDto);
+  }
+
+  @Post('kyc/company-info')
+  @ApiOperation({ summary: 'Submit vendor KYC company info' })
+  async kycCompanyInfo(
+    @CurrentUser('_id') userId: string,
+    @Body() companyDto: VendorCompanyDto,
+  ) {
+    return this.vendorsService.kycCompanyInfo(userId, companyDto);
+  }
+
+  @Post('kyc/documents')
+  @UseInterceptors(FilesInterceptor('documents'))
+  @ApiOperation({ summary: 'Submit vendor KYC documents' })
+  async kycDocuments(
+    @CurrentUser('_id') userId: string,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Body() kycDto: VendorKycDto,
+  ) {
+    return this.vendorsService.kycDocuments(userId, files, kycDto);
+  }
+
+  @Get(':vendorId/products')
+  @ApiOperation({ summary: 'Get products for a vendor' })
+  async getVendorProducts(
+    @Param('vendorId') vendorId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: string,
+    @Query('category') category?: string,
+  ) {
+    return this.vendorsService.getVendorProducts(vendorId, { page, limit, status, category });
   }
 }

@@ -79,28 +79,61 @@ export class OrdersService {
     return savedOrder;
   }
 
-  async findAll(): Promise<OrderDocument[]> {
+  async findAll(filter: any = {}): Promise<OrderDocument[]> {
+    const query: any = {};
+    if (filter.status) query.status = filter.status;
+    if (filter.startDate || filter.endDate) {
+      query.createdAt = {};
+      if (filter.startDate) query.createdAt.$gte = new Date(filter.startDate);
+      if (filter.endDate) query.createdAt.$lte = new Date(filter.endDate);
+    }
+    const page = filter.page || 1;
+    const limit = filter.limit || 20;
     return this.orderModel
-      .find()
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
       .populate('customerId', 'email profile')
       .populate('vendorId', 'businessName')
       .populate('items.productId', 'name images')
       .exec();
   }
 
-  async findByCustomer(customerId: string): Promise<OrderDocument[]> {
+  async findByCustomer(customerId: string, filter: any = {}): Promise<OrderDocument[]> {
+    const query: any = { customerId };
+    if (filter.status) query.status = filter.status;
+    if (filter.startDate || filter.endDate) {
+      query.createdAt = {};
+      if (filter.startDate) query.createdAt.$gte = new Date(filter.startDate);
+      if (filter.endDate) query.createdAt.$lte = new Date(filter.endDate);
+    }
+    const page = filter.page || 1;
+    const limit = filter.limit || 20;
     return this.orderModel
-      .find({ customerId })
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
       .populate('vendorId', 'businessName storeSettings')
       .populate('items.productId', 'name images')
       .sort({ createdAt: -1 })
       .exec();
   }
 
-  async findByVendor(userId: string): Promise<OrderDocument[]> {
+  async findByVendor(userId: string, filter: any = {}): Promise<OrderDocument[]> {
     const vendor = await this.vendorsService.findByUserId(userId);
+    const query: any = { vendorId: vendor._id };
+    if (filter.status) query.status = filter.status;
+    if (filter.startDate || filter.endDate) {
+      query.createdAt = {};
+      if (filter.startDate) query.createdAt.$gte = new Date(filter.startDate);
+      if (filter.endDate) query.createdAt.$lte = new Date(filter.endDate);
+    }
+    const page = filter.page || 1;
+    const limit = filter.limit || 20;
     return this.orderModel
-      .find({ vendorId: vendor._id })
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
       .populate('customerId', 'email profile')
       .populate('items.productId', 'name images')
       .sort({ createdAt: -1 })
@@ -121,39 +154,34 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, status: OrderStatus, userId: string): Promise<OrderDocument> {
+  async updateStatus(id: string, dto: any, userId: string): Promise<OrderDocument> {
     const order = await this.findOne(id);
     const vendor = await this.vendorsService.findByUserId(userId);
-
-    // Check if the order belongs to the current vendor
     if (order.vendorId.toString() !== vendor._id.toString()) {
       throw new BadRequestException('You can only update your own orders');
     }
-
+    const update: any = { status: dto.status };
+    if (dto.note) update.note = dto.note;
+    if (dto.trackingNumber) update['delivery.trackingNumber'] = dto.trackingNumber;
+    if (dto.carrier) update['delivery.carrier'] = dto.carrier;
     const updatedOrder = await this.orderModel
-      .findByIdAndUpdate(id, { status }, { new: true })
+      .findByIdAndUpdate(id, update, { new: true })
       .populate('customerId', 'email profile')
       .populate('vendorId', 'businessName')
       .populate('items.productId', 'name images')
       .exec();
-
     return updatedOrder;
   }
 
-  async cancel(id: string, userId: string): Promise<OrderDocument> {
+  async cancel(id: string, userId: string, reason?: string): Promise<OrderDocument> {
     const order = await this.findOne(id);
-
-    // Check if the order belongs to the current customer
     if (order.customerId.toString() !== userId) {
       throw new BadRequestException('You can only cancel your own orders');
     }
-
-    // Only allow cancellation for pending or confirmed orders
     if (![OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(order.status)) {
       throw new BadRequestException('Order cannot be cancelled at this stage');
     }
-
-    return this.updateOrderStatus(id, OrderStatus.CANCELLED);
+    return this.updateOrderStatus(id, OrderStatus.CANCELLED, reason);
   }
 
   async track(orderId: string): Promise<any> {
@@ -174,9 +202,11 @@ export class OrdersService {
     };
   }
 
-  private async updateOrderStatus(id: string, status: OrderStatus): Promise<OrderDocument> {
+  private async updateOrderStatus(id: string, status: OrderStatus, reason?: string): Promise<OrderDocument> {
+    const update: any = { status };
+    if (reason) update.cancelReason = reason;
     return this.orderModel
-      .findByIdAndUpdate(id, { status }, { new: true })
+      .findByIdAndUpdate(id, update, { new: true })
       .populate('customerId', 'email profile')
       .populate('vendorId', 'businessName')
       .populate('items.productId', 'name images')

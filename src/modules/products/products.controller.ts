@@ -8,7 +8,10 @@ import {
   Param,
   Query,
   UseGuards,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -17,6 +20,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -104,5 +108,31 @@ export class ProductsController {
   @ApiOperation({ summary: 'Delete product (Vendor only)' })
   remove(@Param('id') id: string, @CurrentUser('_id') userId: string) {
     return this.productsService.remove(id, userId);
+  }
+
+  @Post(':id/images')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.VENDOR)
+  @ApiBearerAuth()
+  @UseInterceptors(FilesInterceptor('images'))
+  @ApiOperation({ summary: 'Upload product images (Vendor only)' })
+  async uploadImages(
+    @Param('id') id: string,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @CurrentUser('_id') userId: string,
+  ) {
+    return this.productsService.uploadImages(id, userId, files);
+  }
+
+  @Get('featured')
+  @ApiOperation({ summary: 'Get featured products' })
+  getFeatured() {
+    return this.productsService.getFeatured();
+  }
+
+  @Get('trending')
+  @ApiOperation({ summary: 'Get trending products' })
+  getTrending() {
+    return this.productsService.getTrending();
   }
 }

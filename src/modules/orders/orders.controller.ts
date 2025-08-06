@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,6 +17,8 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { OrderFilterDto } from './dto/order-filter.dto';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -37,22 +40,22 @@ export class OrdersController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all orders (Admin only)' })
-  findAll() {
-    return this.ordersService.findAll();
+  findAll(@Query() filter: OrderFilterDto) {
+    return this.ordersService.findAll(filter);
   }
 
   @Get('my-orders')
   @ApiOperation({ summary: 'Get current user orders' })
-  getMyOrders(@CurrentUser('_id') userId: string) {
-    return this.ordersService.findByCustomer(userId);
+  getMyOrders(@CurrentUser('_id') userId: string, @Query() filter: OrderFilterDto) {
+    return this.ordersService.findByCustomer(userId, filter);
   }
 
   @Get('vendor')
   @UseGuards(RolesGuard)
   @Roles(UserRole.VENDOR)
   @ApiOperation({ summary: 'Get vendor orders' })
-  getVendorOrders(@CurrentUser('_id') userId: string) {
-    return this.ordersService.findByVendor(userId);
+  getVendorOrders(@CurrentUser('_id') userId: string, @Query() filter: OrderFilterDto) {
+    return this.ordersService.findByVendor(userId, filter);
   }
 
   @Get(':id')
@@ -67,16 +70,16 @@ export class OrdersController {
   @ApiOperation({ summary: 'Update order status (Vendor only)' })
   updateStatus(
     @Param('id') id: string,
-    @Body('status') status: OrderStatus,
+    @Body() dto: UpdateOrderStatusDto,
     @CurrentUser('_id') userId: string,
   ) {
-    return this.ordersService.updateStatus(id, status, userId);
+    return this.ordersService.updateStatus(id, dto, userId);
   }
 
   @Put(':id/cancel')
   @ApiOperation({ summary: 'Cancel order' })
-  cancel(@Param('id') id: string, @CurrentUser('_id') userId: string) {
-    return this.ordersService.cancel(id, userId);
+  cancel(@Param('id') id: string, @CurrentUser('_id') userId: string, @Body('reason') reason?: string) {
+    return this.ordersService.cancel(id, userId, reason);
   }
 
   @Get(':id/track')

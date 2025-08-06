@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -57,6 +57,31 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     return updatedUser;
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<User> {
+    // TODO: Integrate with uploads service/cloud storage
+    // For now, just save the file path or buffer as avatar
+    const avatarUrl = `uploads/avatars/${file.filename || file.originalname}`;
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true })
+      .select('-password')
+      .exec();
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return updatedUser;
+  }
+
+  async changePassword(userId: string, dto: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) throw new NotFoundException('User not found');
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch) throw new UnauthorizedException('Current password is incorrect');
+    const hashed = await bcrypt.hash(dto.newPassword, 10);
+    user.password = hashed;
+    await user.save();
+    return { message: 'Password changed successfully' };
   }
 
   async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
