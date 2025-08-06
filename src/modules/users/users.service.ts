@@ -184,6 +184,64 @@ export class UsersService {
     return user.kycDocuments || null;
   }
 
+  // Password reset methods
+  async setPasswordResetToken(userId: string, token: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { 
+      passwordResetToken: token,
+      passwordResetExpires: new Date(Date.now() + 3600000) // 1 hour
+    }).exec();
+  }
+
+  async findByPasswordResetToken(token: string): Promise<UserDocument> {
+    const user = await this.userModel.findOne({ 
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: new Date() }
+    }).exec();
+    
+    if (!user) {
+      throw new NotFoundException('Invalid or expired reset token');
+    }
+    return user;
+  }
+
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { 
+      password: hashedPassword 
+    }).exec();
+  }
+
+  async clearPasswordResetToken(userId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { 
+      passwordResetToken: undefined,
+      passwordResetExpires: undefined
+    }).exec();
+  }
+
+  // Email verification methods
+  async setEmailVerificationToken(userId: string, token: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { 
+      emailVerificationToken: token 
+    }).exec();
+  }
+
+  async findByEmailVerificationToken(token: string): Promise<UserDocument> {
+    const user = await this.userModel.findOne({ 
+      emailVerificationToken: token 
+    }).exec();
+    
+    if (!user) {
+      throw new NotFoundException('Invalid verification token');
+    }
+    return user;
+  }
+
+  async verifyEmail(userId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { 
+      emailVerified: true,
+      emailVerificationToken: undefined
+    }).exec();
+  }
+
   async changePassword(userId: string, dto: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) throw new NotFoundException('User not found');

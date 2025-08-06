@@ -12,4 +12,7 @@ export declare class ProductsController {
     findOne(id: string): Promise<import("./schemas/product.schema").ProductDocument>;
     update(id: string, userId: string, updateProductDto: Partial<CreateProductDto>): Promise<import("./schemas/product.schema").ProductDocument>;
     remove(id: string, userId: string): Promise<void>;
+    uploadImages(id: string, files: Array<Express.Multer.File>, userId: string): Promise<import("./schemas/product.schema").ProductDocument>;
+    getFeatured(): Promise<import("./schemas/product.schema").ProductDocument[]>;
+    getTrending(): Promise<import("./schemas/product.schema").ProductDocument[]>;
 }

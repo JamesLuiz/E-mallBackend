@@ -24,4 +24,23 @@ export declare class AuthService {
     logout(userId: string): Promise<{
         message: string;
     }>;
+    forgotPassword(email: string): Promise<{
+        message: string;
+    }>;
+    resetPassword(token: string, newPassword: string): Promise<{
+        message: string;
+    }>;
+    verifyEmail(token: string): Promise<{
+        message: string;
+    }>;
+    resendVerification(email: string): Promise<{
+        message: string;
+    }>;
+    googleAuth(): Promise<{
+        url: string;
+    }>;
+    googleAuthCallback(query: any): Promise<{
+        message: string;
+        query: any;
+    }>;
 }

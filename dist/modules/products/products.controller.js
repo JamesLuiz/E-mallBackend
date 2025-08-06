@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
@@ -60,6 +61,15 @@ let ProductsController = class ProductsController {
     }
     remove(id, userId) {
         return this.productsService.remove(id, userId);
+    }
+    async uploadImages(id, files, userId) {
+        return this.productsService.uploadImages(id, userId, files);
+    }
+    getFeatured() {
+        return this.productsService.getFeatured();
+    }
+    getTrending() {
+        return this.productsService.getTrending();
     }
 };
 exports.ProductsController = ProductsController;
@@ -154,6 +164,34 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/images'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_role_enum_1.UserRole.VENDOR),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images')),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload product images (Vendor only)' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)('_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Array, String]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "uploadImages", null);
+__decorate([
+    (0, common_1.Get)('featured'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get featured products' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "getFeatured", null);
+__decorate([
+    (0, common_1.Get)('trending'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get trending products' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "getTrending", null);
 exports.ProductsController = ProductsController = __decorate([
     (0, swagger_1.ApiTags)('Products'),
     (0, common_1.Controller)('products'),

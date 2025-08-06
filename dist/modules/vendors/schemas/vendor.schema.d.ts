@@ -2,10 +2,30 @@ import { Document, Types } from 'mongoose';
 export type VendorDocument = Vendor & Document;
 export declare class StoreSettings {
     logo: string;
+    logoUri: string;
+    logoHash: string;
     banner: string;
+    bannerUri: string;
+    bannerHash: string;
     primaryColor: string;
     description: string;
     socialLinks: Record<string, string>;
+}
+export declare class VendorKycDocuments {
+    identityDocumentType: string;
+    identityDocumentUri: string;
+    identityDocumentHash: string;
+    businessCertificateUri: string;
+    businessCertificateHash: string;
+    taxCertificateUri: string;
+    taxCertificateHash: string;
+    bankStatementUri: string;
+    bankStatementHash: string;
+    verificationStatus: 'pending' | 'approved' | 'rejected';
+    verificationNotes: string;
+    submittedAt: Date;
+    verifiedAt: Date;
+    verifiedBy: string;
 }
 export declare class Subscription {
     plan: string;
@@ -20,6 +40,7 @@ export declare class Vendor {
     businessDescription: string;
     businessAddress: string;
     storeSettings: StoreSettings;
+    kycDocuments: VendorKycDocuments;
     subscription: Subscription;
     verified: boolean;
     rating: number;

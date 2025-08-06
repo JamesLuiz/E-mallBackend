@@ -18,6 +18,7 @@ const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const file_upload_service_1 = require("./file-upload.service");
+const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
 let FileUploadController = class FileUploadController {
     constructor(fileUploadService) {
         this.fileUploadService = fileUploadService;
@@ -26,26 +27,70 @@ let FileUploadController = class FileUploadController {
         if (!file) {
             throw new common_1.BadRequestException('No file uploaded');
         }
-        const url = await this.fileUploadService.uploadFile(file);
+        const result = await this.fileUploadService.uploadFile(file);
         return {
             message: 'File uploaded successfully',
-            url,
-            filename: file.originalname,
-            size: file.size,
+            ...result,
         };
     }
     async uploadMultiple(files) {
         if (!files || files.length === 0) {
             throw new common_1.BadRequestException('No files uploaded');
         }
-        const urls = await this.fileUploadService.uploadMultipleFiles(files);
+        const results = await this.fileUploadService.uploadMultipleFiles(files);
         return {
             message: 'Files uploaded successfully',
-            files: files.map((file, index) => ({
-                originalName: file.originalname,
-                url: urls[index],
-                size: file.size,
-            })),
+            files: results,
+        };
+    }
+    async uploadProfilePicture(file, userId) {
+        if (!file) {
+            throw new common_1.BadRequestException('No file uploaded');
+        }
+        const result = await this.fileUploadService.uploadProfilePicture(file, userId);
+        return {
+            message: 'Profile picture uploaded successfully',
+            ...result,
+        };
+    }
+    async uploadKycDocuments(files, documentType, userId) {
+        if (!files || files.length === 0) {
+            throw new common_1.BadRequestException('No files uploaded');
+        }
+        const results = await this.fileUploadService.uploadKycDocuments(files, userId, documentType);
+        return {
+            message: 'KYC documents uploaded successfully',
+            documents: results,
+        };
+    }
+    async uploadProductImages(files, productId, userId) {
+        if (!files || files.length === 0) {
+            throw new common_1.BadRequestException('No files uploaded');
+        }
+        const results = await this.fileUploadService.uploadProductImages(files, productId, userId);
+        return {
+            message: 'Product images uploaded successfully',
+            images: results,
+        };
+    }
+    async uploadVendorLogo(file, userId) {
+        if (!file) {
+            throw new common_1.BadRequestException('No file uploaded');
+        }
+        const result = await this.fileUploadService.uploadVendorLogo(file, userId);
+        return {
+            message: 'Vendor logo uploaded successfully',
+            ...result,
+        };
+    }
+    async uploadVendorBanner(file, userId) {
+        if (!file) {
+            throw new common_1.BadRequestException('No file uploaded');
+        }
+        const result = await this.fileUploadService.uploadVendorBanner(file, userId);
+        return {
+            message: 'Vendor banner uploaded successfully',
+            ...result,
         };
     }
 };
@@ -70,6 +115,82 @@ __decorate([
     __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], FileUploadController.prototype, "uploadMultiple", null);
+__decorate([
+    (0, common_1.Post)('profile-picture'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload profile picture' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, get_user_decorator_1.GetUser)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], FileUploadController.prototype, "uploadProfilePicture", null);
+__decorate([
+    (0, common_1.Post)('kyc-documents'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('files', 5)),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload KYC documents' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: {
+                files: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        format: 'binary',
+                    },
+                },
+                documentType: {
+                    type: 'string',
+                    description: 'Type of KYC documents being uploaded',
+                },
+            },
+        },
+    }),
+    __param(0, (0, common_1.UploadedFiles)()),
+    __param(1, (0, common_1.Body)('documentType')),
+    __param(2, (0, get_user_decorator_1.GetUser)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Array, String, String]),
+    __metadata("design:returntype", Promise)
+], FileUploadController.prototype, "uploadKycDocuments", null);
+__decorate([
+    (0, common_1.Post)('product-images/:productId'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('files', 10)),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload product images' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiParam)({ name: 'productId', description: 'Product ID' }),
+    __param(0, (0, common_1.UploadedFiles)()),
+    __param(1, (0, common_1.Param)('productId')),
+    __param(2, (0, get_user_decorator_1.GetUser)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Array, String, String]),
+    __metadata("design:returntype", Promise)
+], FileUploadController.prototype, "uploadProductImages", null);
+__decorate([
+    (0, common_1.Post)('vendor/logo'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload vendor logo' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, get_user_decorator_1.GetUser)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], FileUploadController.prototype, "uploadVendorLogo", null);
+__decorate([
+    (0, common_1.Post)('vendor/banner'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload vendor banner' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, get_user_decorator_1.GetUser)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], FileUploadController.prototype, "uploadVendorBanner", null);
 exports.FileUploadController = FileUploadController = __decorate([
     (0, swagger_1.ApiTags)('File Upload'),
     (0, swagger_1.ApiBearerAuth)(),

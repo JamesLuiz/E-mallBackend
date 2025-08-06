@@ -11,61 +11,66 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileUploadService = void 0;
 const common_1 = require("@nestjs/common");
-const nft_storage_1 = require("nft.storage");
-const uuid_1 = require("uuid");
+const pinata_service_1 = require("../../common/services/pinata.service");
 let FileUploadService = class FileUploadService {
-    constructor() {
-        const apiKey = process.env.NFTUP_API_KEY;
-        if (!apiKey) {
-            throw new Error('NFTUP_API_KEY environment variable is required');
-        }
-        this.nftStorage = new nft_storage_1.NFTStorage({ token: apiKey });
+    constructor(pinataService) {
+        this.pinataService = pinataService;
     }
-    async uploadFile(file) {
+    async uploadFile(file, fileType = pinata_service_1.FileType.GENERAL, metadata) {
         try {
             if (!file) {
                 throw new common_1.BadRequestException('No file provided');
             }
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-            if (!allowedTypes.includes(file.mimetype)) {
-                throw new common_1.BadRequestException('Invalid file type. Only images are allowed.');
-            }
-            const maxSize = 5 * 1024 * 1024;
-            if (file.size > maxSize) {
-                throw new common_1.BadRequestException('File size too large. Maximum 5MB allowed.');
-            }
-            const fileObj = new File([file.buffer], `${(0, uuid_1.v4)()}-${file.originalname}`, {
-                type: file.mimetype,
-            });
-            const cid = await this.nftStorage.storeBlob(fileObj);
-            return `https://nftstorage.link/ipfs/${cid}`;
+            return await this.pinataService.uploadFile(file, fileType, metadata);
         }
         catch (error) {
             console.error('File upload error:', error);
             throw new common_1.BadRequestException(`File upload failed: ${error.message}`);
         }
     }
-    async uploadMultipleFiles(files) {
+    async uploadMultipleFiles(files, fileType = pinata_service_1.FileType.GENERAL, metadata) {
         if (!files || files.length === 0) {
             throw new common_1.BadRequestException('No files provided');
         }
-        const uploadPromises = files.map(file => this.uploadFile(file));
-        return Promise.all(uploadPromises);
+        return await this.pinataService.uploadMultipleFiles(files, fileType, metadata);
     }
-    async deleteFile(cid) {
+    async deleteFile(hash) {
         try {
-            console.log(`File deletion requested for CID: ${cid}`);
-            return true;
+            return await this.pinataService.deleteFile(hash);
         }
         catch (error) {
             console.error('File deletion error:', error);
             return false;
         }
     }
+    async getFileInfo(hash) {
+        try {
+            return await this.pinataService.getFileInfo(hash);
+        }
+        catch (error) {
+            console.error('Get file info error:', error);
+            return null;
+        }
+    }
+    async uploadProfilePicture(file, userId) {
+        return this.uploadFile(file, pinata_service_1.FileType.PROFILE_PICTURE, { userId });
+    }
+    async uploadProductImages(files, productId, vendorId) {
+        return this.uploadMultipleFiles(files, pinata_service_1.FileType.PRODUCT_IMAGE, { productId, vendorId });
+    }
+    async uploadKycDocuments(files, userId, documentType) {
+        return this.uploadMultipleFiles(files, pinata_service_1.FileType.KYC_DOCUMENT, { userId, documentType });
+    }
+    async uploadVendorLogo(file, vendorId) {
+        return this.uploadFile(file, pinata_service_1.FileType.VENDOR_LOGO, { vendorId });
+    }
+    async uploadVendorBanner(file, vendorId) {
+        return this.uploadFile(file, pinata_service_1.FileType.VENDOR_BANNER, { vendorId });
+    }
 };
 exports.FileUploadService = FileUploadService;
 exports.FileUploadService = FileUploadService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [])
+    __metadata("design:paramtypes", [pinata_service_1.PinataService])
 ], FileUploadService);
 //# sourceMappingURL=file-upload.service.js.map

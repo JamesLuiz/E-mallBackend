@@ -14,6 +14,7 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = require("bcrypt");
 const users_service_1 = require("../users/users.service");
+const uuid_1 = require("uuid");
 let AuthService = class AuthService {
     constructor(usersService, jwtService) {
         this.usersService = usersService;
@@ -67,6 +68,46 @@ let AuthService = class AuthService {
     async logout(userId) {
         await this.usersService.updateRefreshToken(userId, null);
         return { message: 'Logged out successfully' };
+    }
+    async forgotPassword(email) {
+        const user = await this.usersService.findByEmail(email);
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        const token = (0, uuid_1.v4)();
+        await this.usersService.setPasswordResetToken(user._id, token);
+        return { message: 'Password reset email sent' };
+    }
+    async resetPassword(token, newPassword) {
+        const user = await this.usersService.findByPasswordResetToken(token);
+        if (!user)
+            throw new common_1.BadRequestException('Invalid or expired token');
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await this.usersService.updatePassword(user._id, hashed);
+        await this.usersService.clearPasswordResetToken(user._id);
+        return { message: 'Password reset successful' };
+    }
+    async verifyEmail(token) {
+        const user = await this.usersService.findByEmailVerificationToken(token);
+        if (!user)
+            throw new common_1.BadRequestException('Invalid or expired token');
+        await this.usersService.verifyEmail(user._id);
+        return { message: 'Email verified successfully' };
+    }
+    async resendVerification(email) {
+        const user = await this.usersService.findByEmail(email);
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        if (user.emailVerified)
+            throw new common_1.BadRequestException('Email already verified');
+        const token = (0, uuid_1.v4)();
+        await this.usersService.setEmailVerificationToken(user._id, token);
+        return { message: 'Verification email resent' };
+    }
+    async googleAuth() {
+        return { url: 'https://accounts.google.com/o/oauth2/v2/auth?...' };
+    }
+    async googleAuthCallback(query) {
+        return { message: 'Google OAuth callback', query };
     }
 };
 exports.AuthService = AuthService;

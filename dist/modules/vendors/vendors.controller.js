@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VendorsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
@@ -22,12 +23,15 @@ const current_user_decorator_1 = require("../../common/decorators/current-user.d
 const user_role_enum_1 = require("../../common/enums/user-role.enum");
 const vendors_service_1 = require("./vendors.service");
 const create_vendor_dto_1 = require("./dto/create-vendor.dto");
+const vendor_bio_dto_1 = require("./dto/vendor-bio.dto");
+const vendor_company_dto_1 = require("./dto/vendor-company.dto");
+const vendor_kyc_dto_1 = require("./dto/vendor-kyc.dto");
 let VendorsController = class VendorsController {
     constructor(vendorsService) {
         this.vendorsService = vendorsService;
     }
     create(userId, createVendorDto) {
-        return this.vendorsService.create(userId, createVendorDto);
+        return this.vendorsService.create(userId, createVendorDto.businessName);
     }
     findAll() {
         return this.vendorsService.findAll();
@@ -36,8 +40,7 @@ let VendorsController = class VendorsController {
         return this.vendorsService.findByUserId(userId);
     }
     async updateProfile(userId, updateVendorDto) {
-        const vendor = await this.vendorsService.findByUserId(userId);
-        return this.vendorsService.update(vendor._id.toString(), updateVendorDto);
+        return this.vendorsService.updateByUserId(userId, updateVendorDto);
     }
     getDashboard(userId) {
         return this.vendorsService.getDashboardData(userId);
@@ -50,6 +53,18 @@ let VendorsController = class VendorsController {
     }
     findOne(id) {
         return this.vendorsService.findOne(id);
+    }
+    async kycBioData(userId, bioDto) {
+        return this.vendorsService.kycBioData(userId, bioDto);
+    }
+    async kycCompanyInfo(userId, companyDto) {
+        return this.vendorsService.kycCompanyInfo(userId, companyDto);
+    }
+    async kycDocuments(userId, files, kycDto) {
+        return this.vendorsService.kycDocuments(userId, files, kycDto);
+    }
+    async getVendorProducts(vendorId, page, limit, status, category) {
+        return this.vendorsService.getVendorProducts(vendorId, { page, limit, status, category });
     }
 };
 exports.VendorsController = VendorsController;
@@ -124,6 +139,48 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], VendorsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)('kyc/bio-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Submit vendor KYC bio-data' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('_id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, vendor_bio_dto_1.VendorBioDto]),
+    __metadata("design:returntype", Promise)
+], VendorsController.prototype, "kycBioData", null);
+__decorate([
+    (0, common_1.Post)('kyc/company-info'),
+    (0, swagger_1.ApiOperation)({ summary: 'Submit vendor KYC company info' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('_id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, vendor_company_dto_1.VendorCompanyDto]),
+    __metadata("design:returntype", Promise)
+], VendorsController.prototype, "kycCompanyInfo", null);
+__decorate([
+    (0, common_1.Post)('kyc/documents'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('documents')),
+    (0, swagger_1.ApiOperation)({ summary: 'Submit vendor KYC documents' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('_id')),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Array,
+        vendor_kyc_dto_1.VendorKycDto]),
+    __metadata("design:returntype", Promise)
+], VendorsController.prototype, "kycDocuments", null);
+__decorate([
+    (0, common_1.Get)(':vendorId/products'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get products for a vendor' }),
+    __param(0, (0, common_1.Param)('vendorId')),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('status')),
+    __param(4, (0, common_1.Query)('category')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, Number, String, String]),
+    __metadata("design:returntype", Promise)
+], VendorsController.prototype, "getVendorProducts", null);
 exports.VendorsController = VendorsController = __decorate([
     (0, swagger_1.ApiTags)('Vendors'),
     (0, swagger_1.ApiBearerAuth)(),

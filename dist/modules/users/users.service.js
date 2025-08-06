@@ -60,6 +60,148 @@ let UsersService = class UsersService {
         }
         return updatedUser;
     }
+    async uploadAvatar(userId, file) {
+        const avatarUrl = `uploads/avatars/${file.filename || file.originalname}`;
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true })
+            .select('-password')
+            .exec();
+        if (!updatedUser) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return updatedUser;
+    }
+    async updateProfilePicture(userId, uploadResult) {
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(userId, {
+            $set: {
+                'profile.avatarUri': uploadResult.uri,
+                'profile.avatarHash': uploadResult.hash,
+                'profile.avatar': uploadResult.uri,
+            },
+        }, { new: true, runValidators: true })
+            .select('-password')
+            .exec();
+        if (!updatedUser) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return updatedUser;
+    }
+    async uploadKycDocuments(userId, documentType, uploadResult) {
+        const updateData = {
+            'kycDocuments.submittedAt': new Date(),
+            'kycDocuments.verificationStatus': 'pending',
+        };
+        if (documentType === 'identity') {
+            updateData['kycDocuments.identityDocumentUri'] = uploadResult.uri;
+            updateData['kycDocuments.identityDocumentHash'] = uploadResult.hash;
+        }
+        else if (documentType === 'proofOfAddress') {
+            updateData['kycDocuments.proofOfAddressUri'] = uploadResult.uri;
+            updateData['kycDocuments.proofOfAddressHash'] = uploadResult.hash;
+        }
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true })
+            .select('-password')
+            .exec();
+        if (!updatedUser) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return updatedUser;
+    }
+    async updateKycDocumentType(userId, documentType) {
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(userId, { $set: { 'kycDocuments.identityDocumentType': documentType } }, { new: true, runValidators: true })
+            .select('-password')
+            .exec();
+        if (!updatedUser) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return updatedUser;
+    }
+    async updateKycVerificationStatus(userId, status, notes) {
+        const updateData = {
+            'kycDocuments.verificationStatus': status,
+            'kycDocuments.verificationNotes': notes,
+        };
+        if (status === 'approved' || status === 'rejected') {
+            updateData['kycDocuments.verifiedAt'] = new Date();
+        }
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true })
+            .select('-password')
+            .exec();
+        if (!updatedUser) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return updatedUser;
+    }
+    async getKycStatus(userId) {
+        const user = await this.userModel.findById(userId).select('kycDocuments').exec();
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return user.kycDocuments || null;
+    }
+    async setPasswordResetToken(userId, token) {
+        await this.userModel.findByIdAndUpdate(userId, {
+            passwordResetToken: token,
+            passwordResetExpires: new Date(Date.now() + 3600000)
+        }).exec();
+    }
+    async findByPasswordResetToken(token) {
+        const user = await this.userModel.findOne({
+            passwordResetToken: token,
+            passwordResetExpires: { $gt: new Date() }
+        }).exec();
+        if (!user) {
+            throw new common_1.NotFoundException('Invalid or expired reset token');
+        }
+        return user;
+    }
+    async updatePassword(userId, hashedPassword) {
+        await this.userModel.findByIdAndUpdate(userId, {
+            password: hashedPassword
+        }).exec();
+    }
+    async clearPasswordResetToken(userId) {
+        await this.userModel.findByIdAndUpdate(userId, {
+            passwordResetToken: undefined,
+            passwordResetExpires: undefined
+        }).exec();
+    }
+    async setEmailVerificationToken(userId, token) {
+        await this.userModel.findByIdAndUpdate(userId, {
+            emailVerificationToken: token
+        }).exec();
+    }
+    async findByEmailVerificationToken(token) {
+        const user = await this.userModel.findOne({
+            emailVerificationToken: token
+        }).exec();
+        if (!user) {
+            throw new common_1.NotFoundException('Invalid verification token');
+        }
+        return user;
+    }
+    async verifyEmail(userId) {
+        await this.userModel.findByIdAndUpdate(userId, {
+            emailVerified: true,
+            emailVerificationToken: undefined
+        }).exec();
+    }
+    async changePassword(userId, dto) {
+        const user = await this.userModel.findById(userId).exec();
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+        if (!isMatch)
+            throw new common_1.UnauthorizedException('Current password is incorrect');
+        const hashed = await bcrypt.hash(dto.newPassword, 10);
+        user.password = hashed;
+        await user.save();
+        return { message: 'Password changed successfully' };
+    }
     async updateRefreshToken(userId, refreshToken) {
         await this.userModel.findByIdAndUpdate(userId, { refreshToken }).exec();
     }
