@@ -26,6 +26,43 @@ export class Profile {
 
   @Prop()
   avatar: string;
+
+  // New field for Pinata IPFS URI
+  @Prop()
+  avatarUri: string;
+
+  @Prop()
+  avatarHash: string; // IPFS hash for potential deletion
+}
+
+@Schema()
+export class KycDocuments {
+  @Prop({ enum: ['passport', 'national_id', 'drivers_license'] })
+  identityDocumentType: string;
+
+  @Prop()
+  identityDocumentUri: string;
+
+  @Prop()
+  identityDocumentHash: string;
+
+  @Prop()
+  proofOfAddressUri: string;
+
+  @Prop()
+  proofOfAddressHash: string;
+
+  @Prop({ default: 'pending' })
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+
+  @Prop()
+  verificationNotes: string;
+
+  @Prop({ default: Date.now })
+  submittedAt: Date;
+
+  @Prop()
+  verifiedAt: Date;
 }
 
 @Schema({ timestamps: true })
@@ -41,6 +78,9 @@ export class User {
 
   @Prop({ type: Profile })
   profile: Profile;
+
+  @Prop({ type: KycDocuments })
+  kycDocuments: KycDocuments;
 
   @Prop({ default: true })
   isActive: boolean;

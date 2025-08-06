@@ -2,9 +2,10 @@ import { Injectable, NotFoundException, BadRequestException, UnauthorizedExcepti
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { User, UserDocument } from './schemas/user.schema';
+import { User, UserDocument, KycDocuments } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { FileUploadResult } from '../../common/services/pinata.service';
 
 @Injectable()
 export class UsersService {
@@ -71,6 +72,116 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     return updatedUser;
+  }
+
+  // New method for Pinata profile picture upload
+  async updateProfilePicture(userId: string, uploadResult: FileUploadResult): Promise<User> {
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            'profile.avatarUri': uploadResult.uri,
+            'profile.avatarHash': uploadResult.hash,
+            'profile.avatar': uploadResult.uri, // Keep legacy field for backward compatibility
+          },
+        },
+        { new: true, runValidators: true }
+      )
+      .select('-password')
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return updatedUser;
+  }
+
+  // New method for KYC document uploads
+  async uploadKycDocuments(
+    userId: string,
+    documentType: 'identity' | 'proofOfAddress',
+    uploadResult: FileUploadResult
+  ): Promise<User> {
+    const updateData: any = {
+      'kycDocuments.submittedAt': new Date(),
+      'kycDocuments.verificationStatus': 'pending',
+    };
+
+    if (documentType === 'identity') {
+      updateData['kycDocuments.identityDocumentUri'] = uploadResult.uri;
+      updateData['kycDocuments.identityDocumentHash'] = uploadResult.hash;
+    } else if (documentType === 'proofOfAddress') {
+      updateData['kycDocuments.proofOfAddressUri'] = uploadResult.uri;
+      updateData['kycDocuments.proofOfAddressHash'] = uploadResult.hash;
+    }
+
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      )
+      .select('-password')
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return updatedUser;
+  }
+
+  async updateKycDocumentType(userId: string, documentType: string): Promise<User> {
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        { $set: { 'kycDocuments.identityDocumentType': documentType } },
+        { new: true, runValidators: true }
+      )
+      .select('-password')
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return updatedUser;
+  }
+
+  async updateKycVerificationStatus(
+    userId: string,
+    status: 'pending' | 'approved' | 'rejected',
+    notes?: string
+  ): Promise<User> {
+    const updateData: any = {
+      'kycDocuments.verificationStatus': status,
+      'kycDocuments.verificationNotes': notes,
+    };
+
+    if (status === 'approved' || status === 'rejected') {
+      updateData['kycDocuments.verifiedAt'] = new Date();
+    }
+
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      )
+      .select('-password')
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return updatedUser;
+  }
+
+  async getKycStatus(userId: string): Promise<KycDocuments | null> {
+    const user = await this.userModel.findById(userId).select('kycDocuments').exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user.kycDocuments || null;
   }
 
   async changePassword(userId: string, dto: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {

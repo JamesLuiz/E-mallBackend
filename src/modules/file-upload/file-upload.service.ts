@@ -1,72 +1,75 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { NFTStorage } from 'nft.storage';
-import { v4 as uuidv4 } from 'uuid';
+import { PinataService, FileType, FileUploadResult } from '../../common/services/pinata.service';
 
 @Injectable()
 export class FileUploadService {
-  private nftStorage: NFTStorage;
+  constructor(private readonly pinataService: PinataService) {}
 
-  constructor() {
-    const apiKey = process.env.NFTUP_API_KEY;
-    if (!apiKey) {
-      throw new Error('NFTUP_API_KEY environment variable is required');
-    }
-    this.nftStorage = new NFTStorage({ token: apiKey });
-  }
-
-  async uploadFile(file: Express.Multer.File): Promise<string> {
+  async uploadFile(
+    file: Express.Multer.File,
+    fileType: FileType = FileType.GENERAL,
+    metadata?: Record<string, any>
+  ): Promise<FileUploadResult> {
     try {
       if (!file) {
         throw new BadRequestException('No file provided');
       }
 
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.mimetype)) {
-        throw new BadRequestException('Invalid file type. Only images are allowed.');
-      }
-
-      // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        throw new BadRequestException('File size too large. Maximum 5MB allowed.');
-      }
-
-      // Create a File object from the buffer
-      const fileObj = new File([file.buffer], `${uuidv4()}-${file.originalname}`, {
-        type: file.mimetype,
-      });
-
-      // Upload to IPFS via NFT.Storage
-      const cid = await this.nftStorage.storeBlob(fileObj);
-      
-      // Return the IPFS gateway URL
-      return `https://nftstorage.link/ipfs/${cid}`;
+      return await this.pinataService.uploadFile(file, fileType, metadata);
     } catch (error) {
       console.error('File upload error:', error);
       throw new BadRequestException(`File upload failed: ${error.message}`);
     }
   }
 
-  async uploadMultipleFiles(files: Express.Multer.File[]): Promise<string[]> {
+  async uploadMultipleFiles(
+    files: Express.Multer.File[],
+    fileType: FileType = FileType.GENERAL,
+    metadata?: Record<string, any>
+  ): Promise<FileUploadResult[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
     }
 
-    const uploadPromises = files.map(file => this.uploadFile(file));
-    return Promise.all(uploadPromises);
+    return await this.pinataService.uploadMultipleFiles(files, fileType, metadata);
   }
 
-  async deleteFile(cid: string): Promise<boolean> {
+  async deleteFile(hash: string): Promise<boolean> {
     try {
-      // Note: NFT.Storage doesn't provide direct delete functionality
-      // Files are permanently stored on IPFS
-      // This method is for future implementation if delete functionality becomes available
-      console.log(`File deletion requested for CID: ${cid}`);
-      return true;
+      return await this.pinataService.deleteFile(hash);
     } catch (error) {
       console.error('File deletion error:', error);
       return false;
     }
+  }
+
+  async getFileInfo(hash: string) {
+    try {
+      return await this.pinataService.getFileInfo(hash);
+    } catch (error) {
+      console.error('Get file info error:', error);
+      return null;
+    }
+  }
+
+  // Specialized upload methods for different file types
+  async uploadProfilePicture(file: Express.Multer.File, userId: string): Promise<FileUploadResult> {
+    return this.uploadFile(file, FileType.PROFILE_PICTURE, { userId });
+  }
+
+  async uploadProductImages(files: Express.Multer.File[], productId: string, vendorId: string): Promise<FileUploadResult[]> {
+    return this.uploadMultipleFiles(files, FileType.PRODUCT_IMAGE, { productId, vendorId });
+  }
+
+  async uploadKycDocuments(files: Express.Multer.File[], userId: string, documentType: string): Promise<FileUploadResult[]> {
+    return this.uploadMultipleFiles(files, FileType.KYC_DOCUMENT, { userId, documentType });
+  }
+
+  async uploadVendorLogo(file: Express.Multer.File, vendorId: string): Promise<FileUploadResult> {
+    return this.uploadFile(file, FileType.VENDOR_LOGO, { vendorId });
+  }
+
+  async uploadVendorBanner(file: Express.Multer.File, vendorId: string): Promise<FileUploadResult> {
+    return this.uploadFile(file, FileType.VENDOR_BANNER, { vendorId });
   }
 }

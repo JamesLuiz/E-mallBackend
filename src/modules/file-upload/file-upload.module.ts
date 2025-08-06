@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { FileUploadController } from './file-upload.controller';
 import { FileUploadService } from './file-upload.service';
+import { PinataService } from '../../common/services/pinata.service';
 
 @Module({
+  imports: [ConfigModule],
   controllers: [FileUploadController],
-  providers: [FileUploadService],
-  exports: [FileUploadService],
+  providers: [FileUploadService, PinataService],
+  exports: [FileUploadService, PinataService],
 })
 export class FileUploadModule {}
