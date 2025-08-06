@@ -13,6 +13,13 @@ import { AdminModule } from './modules/admin/admin.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CategoriesModule } from './categories/categories.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { BlogModule } from './blog/blog.module';
+import { CareersModule } from './careers/careers.module';
+import { SupportModule } from './support/support.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -37,6 +44,13 @@ import { AppService } from './app.service';
     DeliveryModule,
     AdminModule,
     FileUploadModule,
+    CategoriesModule,
+    AnalyticsModule,
+    NotificationsModule,
+    BlogModule,
+    CareersModule,
+    SupportModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
