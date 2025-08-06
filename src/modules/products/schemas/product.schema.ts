@@ -12,6 +12,24 @@ export class Inventory {
   lowStockAlert: number;
 }
 
+@Schema()
+export class ProductImage {
+  @Prop({ required: true })
+  uri: string; // Pinata IPFS URI
+
+  @Prop({ required: true })
+  hash: string; // IPFS hash for deletion
+
+  @Prop()
+  originalName: string;
+
+  @Prop({ default: false })
+  isPrimary: boolean; // Mark primary product image
+
+  @Prop({ default: Date.now })
+  uploadedAt: Date;
+}
+
 @Schema({ timestamps: true })
 export class Product {
   @Prop({ type: Types.ObjectId, ref: 'Vendor', required: true })
@@ -35,8 +53,13 @@ export class Product {
   @Prop({ default: 0 })
   discount: number;
 
+  // Legacy field - keep for backward compatibility
   @Prop({ type: [String], default: [] })
   images: string[];
+
+  // New structured image field with Pinata URIs
+  @Prop({ type: [ProductImage], default: [] })
+  imageUris: ProductImage[];
 
   @Prop({ type: Inventory, required: true })
   inventory: Inventory;

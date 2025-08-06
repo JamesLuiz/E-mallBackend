@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Vendor, VendorDocument } from './schemas/vendor.schema';
-import { CreateVendorDto } from './dto/create-vendor.dto';
+import { Vendor, VendorDocument, VendorKycDocuments } from './schemas/vendor.schema';
 import { VendorBioDto } from './dto/vendor-bio.dto';
 import { VendorCompanyDto } from './dto/vendor-company.dto';
 import { VendorKycDto } from './dto/vendor-kyc.dto';
+import { FileUploadResult } from '../../common/services/pinata.service';
 
 @Injectable()
 export class VendorsService {
@@ -13,26 +13,28 @@ export class VendorsService {
     @InjectModel(Vendor.name) private vendorModel: Model<VendorDocument>,
   ) {}
 
-  async create(userId: string, createVendorDto: CreateVendorDto): Promise<Vendor> {
-    // Check if user already has a vendor profile
+  async create(userId: string, businessName: string): Promise<VendorDocument> {
     const existingVendor = await this.vendorModel.findOne({ userId });
     if (existingVendor) {
-      throw new ForbiddenException('User already has a vendor profile');
+      throw new ForbiddenException('User already has a vendor account');
     }
 
-    const createdVendor = new this.vendorModel({
+    const vendor = new this.vendorModel({
       userId,
-      ...createVendorDto,
+      businessName,
     });
-    return createdVendor.save();
+    return vendor.save();
   }
 
-  async findAll(): Promise<Vendor[]> {
-    return this.vendorModel.find({ verified: true }).populate('userId', 'email profile').exec();
+  async findAll(): Promise<VendorDocument[]> {
+    return this.vendorModel.find().populate('userId', 'email profile').exec();
   }
 
-  async findOne(id: string): Promise<Vendor> {
-    const vendor = await this.vendorModel.findById(id).populate('userId', 'email profile').exec();
+  async findOne(id: string): Promise<VendorDocument> {
+    const vendor = await this.vendorModel
+      .findById(id)
+      .populate('userId', 'email profile')
+      .exec();
     if (!vendor) {
       throw new NotFoundException('Vendor not found');
     }
@@ -40,72 +42,64 @@ export class VendorsService {
   }
 
   async findByUserId(userId: string): Promise<VendorDocument> {
-    const vendor = await this.vendorModel.findOne({ userId }).populate('userId', 'email profile').exec();
+    const vendor = await this.vendorModel
+      .findOne({ userId })
+      .populate('userId', 'email profile')
+      .exec();
     if (!vendor) {
-      throw new NotFoundException('Vendor profile not found');
+      throw new NotFoundException('Vendor not found');
     }
     return vendor;
   }
 
-  async update(id: string, updateVendorDto: Partial<CreateVendorDto>): Promise<Vendor> {
+  async update(id: string, updateVendorDto: Partial<Vendor>): Promise<VendorDocument> {
     const updatedVendor = await this.vendorModel
-      .findByIdAndUpdate(id, updateVendorDto, { new: true, runValidators: true })
+      .findByIdAndUpdate(id, updateVendorDto, { new: true })
       .populate('userId', 'email profile')
       .exec();
-
     if (!updatedVendor) {
       throw new NotFoundException('Vendor not found');
     }
     return updatedVendor;
   }
 
-  async approve(id: string): Promise<Vendor> {
-    const vendor = await this.vendorModel
-      .findByIdAndUpdate(id, { verified: true }, { new: true })
-      .exec();
-
-    if (!vendor) {
+  async remove(id: string): Promise<void> {
+    const result = await this.vendorModel.findByIdAndDelete(id).exec();
+    if (!result) {
       throw new NotFoundException('Vendor not found');
     }
+  }
+
+  async getVerified(): Promise<VendorDocument[]> {
+    return this.vendorModel
+      .find({ verified: true })
+      .populate('userId', 'email profile')
+      .exec();
+  }
+
+  async getTopRated(limit: number = 10): Promise<VendorDocument[]> {
+    return this.vendorModel
+      .find({ verified: true })
+      .sort({ rating: -1 })
+      .limit(limit)
+      .populate('userId', 'email profile')
+      .exec();
+  }
+
+  async updateRating(vendorId: string, newRating: number): Promise<VendorDocument> {
+    const vendor = await this.vendorModel.findByIdAndUpdate(
+      vendorId,
+      { rating: newRating },
+      { new: true },
+    );
+    if (!vendor) throw new NotFoundException('Vendor not found');
     return vendor;
-  }
-
-  async getDashboardData(userId: string) {
-    const vendor = await this.findByUserId(userId);
-    
-    // Mock dashboard data - in real implementation, fetch from products/orders
-    return {
-      vendor,
-      stats: {
-        totalProducts: 0,
-        totalOrders: 0,
-        totalRevenue: 0,
-        averageRating: vendor.rating,
-      },
-      recentOrders: [],
-      salesChart: [],
-    };
-  }
-
-  async getAnalytics(userId: string) {
-    const vendor = await this.findByUserId(userId);
-    
-    // Mock analytics data
-    return {
-      vendor,
-      analytics: {
-        salesOvertime: [],
-        topProducts: [],
-        customerInsights: [],
-        revenueBreakdown: [],
-      },
-    };
   }
 
   async kycBioData(userId: string, bioDto: VendorBioDto) {
     const vendor = await this.vendorModel.findOneAndUpdate(
       { userId },
-      { $set: bioDto },
+      { $set: { bioData: bioDto } },
       { new: true },
     );
     if (!vendor) throw new NotFoundException('Vendor not found');
@@ -115,7 +109,7 @@ export class VendorsService {
   async kycCompanyInfo(userId: string, companyDto: VendorCompanyDto) {
     const vendor = await this.vendorModel.findOneAndUpdate(
       { userId },
-      { $set: { bankDetails: companyDto.bankDetails } },
+      { $set: { companyInfo: companyDto } },
       { new: true },
     );
     if (!vendor) throw new NotFoundException('Vendor not found');
@@ -135,13 +129,152 @@ export class VendorsService {
     return vendor;
   }
 
-  async getVendorProducts(vendorId: string, query: { page?: number; limit?: number; status?: string; category?: string }) {
-    // TODO: Integrate with products service/model
-    // For now, return mock data
-    return {
-      vendorId,
-      products: [],
-      pagination: { page: query.page || 1, limit: query.limit || 10, total: 0 },
+  // New methods for Pinata integration
+
+  async updateVendorLogo(userId: string, uploadResult: FileUploadResult): Promise<VendorDocument> {
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          'storeSettings.logoUri': uploadResult.uri,
+          'storeSettings.logoHash': uploadResult.hash,
+          'storeSettings.logo': uploadResult.uri, // Keep legacy field for backward compatibility
+        },
+      },
+      { new: true, runValidators: true }
+    ).populate('userId', 'email profile').exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async updateVendorBanner(userId: string, uploadResult: FileUploadResult): Promise<VendorDocument> {
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          'storeSettings.bannerUri': uploadResult.uri,
+          'storeSettings.bannerHash': uploadResult.hash,
+          'storeSettings.banner': uploadResult.uri, // Keep legacy field for backward compatibility
+        },
+      },
+      { new: true, runValidators: true }
+    ).populate('userId', 'email profile').exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async uploadVendorKycDocument(
+    userId: string,
+    documentType: 'identity' | 'businessCertificate' | 'taxCertificate' | 'bankStatement',
+    uploadResult: FileUploadResult
+  ): Promise<VendorDocument> {
+    const updateData: any = {
+      'kycDocuments.submittedAt': new Date(),
+      'kycDocuments.verificationStatus': 'pending',
     };
+
+    switch (documentType) {
+      case 'identity':
+        updateData['kycDocuments.identityDocumentUri'] = uploadResult.uri;
+        updateData['kycDocuments.identityDocumentHash'] = uploadResult.hash;
+        break;
+      case 'businessCertificate':
+        updateData['kycDocuments.businessCertificateUri'] = uploadResult.uri;
+        updateData['kycDocuments.businessCertificateHash'] = uploadResult.hash;
+        break;
+      case 'taxCertificate':
+        updateData['kycDocuments.taxCertificateUri'] = uploadResult.uri;
+        updateData['kycDocuments.taxCertificateHash'] = uploadResult.hash;
+        break;
+      case 'bankStatement':
+        updateData['kycDocuments.bankStatementUri'] = uploadResult.uri;
+        updateData['kycDocuments.bankStatementHash'] = uploadResult.hash;
+        break;
+    }
+
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).populate('userId', 'email profile').exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async updateVendorKycDocumentType(userId: string, documentType: string): Promise<VendorDocument> {
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      { $set: { 'kycDocuments.identityDocumentType': documentType } },
+      { new: true, runValidators: true }
+    ).populate('userId', 'email profile').exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async updateVendorKycVerificationStatus(
+    userId: string,
+    status: 'pending' | 'approved' | 'rejected',
+    notes?: string,
+    verifiedBy?: string
+  ): Promise<VendorDocument> {
+    const updateData: any = {
+      'kycDocuments.verificationStatus': status,
+      'kycDocuments.verificationNotes': notes,
+    };
+
+    if (status === 'approved' || status === 'rejected') {
+      updateData['kycDocuments.verifiedAt'] = new Date();
+      updateData['kycDocuments.verifiedBy'] = verifiedBy;
+    }
+
+    // If approved, also mark vendor as verified
+    if (status === 'approved') {
+      updateData['verified'] = true;
+    }
+
+    const vendor = await this.vendorModel.findOneAndUpdate(
+      { userId },
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).populate('userId', 'email profile').exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async getVendorKycStatus(userId: string): Promise<VendorKycDocuments | null> {
+    const vendor = await this.vendorModel.findOne({ userId }).select('kycDocuments').exec();
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor.kycDocuments || null;
+  }
+
+  async getPendingKycVerifications(): Promise<VendorDocument[]> {
+    return this.vendorModel
+      .find({ 'kycDocuments.verificationStatus': 'pending' })
+      .populate('userId', 'email profile')
+      .exec();
+  }
+
+  async getVendorsByVerificationStatus(status: 'pending' | 'approved' | 'rejected'): Promise<VendorDocument[]> {
+    return this.vendorModel
+      .find({ 'kycDocuments.verificationStatus': status })
+      .populate('userId', 'email profile')
+      .exec();
   }
 }
