@@ -3,16 +3,22 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
-  UseGuards,
-  UploadedFile,
-  UploadedFiles,
-  UseInterceptors,
   Query,
+  UseGuards,
+  HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { 
+  ApiTags, 
+  ApiBearerAuth, 
+  ApiOperation, 
+  ApiResponse,
+  ApiParam,
+  ApiQuery 
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -20,9 +26,9 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
-import { VendorBioDto } from './dto/vendor-bio.dto';
-import { VendorCompanyDto } from './dto/vendor-company.dto';
-import { VendorKycDto } from './dto/vendor-kyc.dto';
+import { UpdateVendorDto } from './dto/update-vendor.dto';
+import { VendorResponseDto } from './dto/vendor-response.dto';
+import { VendorQueryDto } from './dto/vendor-query.dto';
 
 @ApiTags('Vendors')
 @ApiBearerAuth()
@@ -34,102 +40,213 @@ export class VendorsController {
   @Post('register')
   @Roles(UserRole.VENDOR, UserRole.CUSTOMER)
   @ApiOperation({ summary: 'Register as vendor' })
-  create(
+  @ApiResponse({ 
+    status: HttpStatus.CREATED, 
+    description: 'Vendor registered successfully',
+    type: VendorResponseDto 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.CONFLICT, 
+    description: 'User is already registered as vendor' 
+  })
+  async create(
     @CurrentUser('_id') userId: string,
     @Body() createVendorDto: CreateVendorDto,
-  ) {
+  ): Promise<VendorResponseDto> {
     return this.vendorsService.create(userId, createVendorDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all verified vendors' })
-  findAll() {
-    return this.vendorsService.findAll();
+  @ApiOperation({ summary: 'Get all verified vendors with optional filtering' })
+  @ApiQuery({ name: 'category', required: false, description: 'Filter by category' })
+  @ApiQuery({ name: 'location', required: false, description: 'Filter by location' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'List of verified vendors',
+    type: [VendorResponseDto] 
+  })
+  async findAll(@Query() query: VendorQueryDto): Promise<VendorResponseDto[]> {
+    return this.vendorsService.findAll(query);
   }
 
   @Get('profile')
   @Roles(UserRole.VENDOR)
-  @ApiOperation({ summary: 'Get vendor profile' })
-  getProfile(@CurrentUser('_id') userId: string) {
+  @ApiOperation({ summary: 'Get current vendor profile' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vendor profile retrieved successfully',
+    type: VendorResponseDto 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vendor profile not found' 
+  })
+  async getProfile(@CurrentUser('_id') userId: string): Promise<VendorResponseDto> {
     return this.vendorsService.findByUserId(userId);
   }
 
   @Put('profile')
   @Roles(UserRole.VENDOR)
-  @ApiOperation({ summary: 'Update vendor profile' })
+  @ApiOperation({ summary: 'Update current vendor profile' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vendor profile updated successfully',
+    type: VendorResponseDto 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vendor profile not found' 
+  })
   async updateProfile(
     @CurrentUser('_id') userId: string,
-    @Body() updateVendorDto: Partial<CreateVendorDto>,
-  ) {
-    const vendor = await this.vendorsService.findByUserId(userId);
-    return this.vendorsService.update((vendor as any)._id.toString(), updateVendorDto);
+    @Body() updateVendorDto: UpdateVendorDto,
+  ): Promise<VendorResponseDto> {
+    return this.vendorsService.updateByUserId(userId, updateVendorDto);
   }
 
   @Get('dashboard')
   @Roles(UserRole.VENDOR)
   @ApiOperation({ summary: 'Get vendor dashboard data' })
-  getDashboard(@CurrentUser('_id') userId: string) {
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Dashboard data retrieved successfully' 
+  })
+  async getDashboard(@CurrentUser('_id') userId: string) {
     return this.vendorsService.getDashboardData(userId);
   }
 
   @Get('analytics')
   @Roles(UserRole.VENDOR)
   @ApiOperation({ summary: 'Get vendor analytics' })
-  getAnalytics(@CurrentUser('_id') userId: string) {
-    return this.vendorsService.getAnalytics(userId);
+  @ApiQuery({ name: 'period', required: false, description: 'Analytics period (7d, 30d, 90d)' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Analytics data retrieved successfully' 
+  })
+  async getAnalytics(
+    @CurrentUser('_id') userId: string,
+    @Query('period') period?: string,
+  ) {
+    return this.vendorsService.getAnalytics(userId, period);
+  }
+
+  @Get('pending')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get pending vendor approvals (Admin only)' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'List of pending vendors',
+    type: [VendorResponseDto] 
+  })
+  async getPendingVendors(): Promise<VendorResponseDto[]> {
+    return this.vendorsService.findPendingVendors();
   }
 
   @Put(':id/approve')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Approve vendor (Admin only)' })
-  approve(@Param('id') id: string) {
-    return this.vendorsService.approve(id);
+  @ApiParam({ name: 'id', description: 'Vendor ID' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vendor approved successfully',
+    type: VendorResponseDto 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vendor not found' 
+  })
+  async approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('_id') adminId: string,
+  ): Promise<VendorResponseDto> {
+    return this.vendorsService.approve(id, adminId);
+  }
+
+  @Put(':id/reject')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Reject vendor (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Vendor ID' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vendor rejected successfully' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vendor not found' 
+  })
+  async reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('_id') adminId: string,
+    @Body('reason') reason?: string,
+  ): Promise<VendorResponseDto> {
+    return this.vendorsService.reject(id, adminId, reason);
+  }
+
+  @Put(':id/suspend')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Suspend vendor (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Vendor ID' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vendor suspended successfully' 
+  })
+  async suspend(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('_id') adminId: string,
+    @Body('reason') reason?: string,
+  ): Promise<VendorResponseDto> {
+    return this.vendorsService.suspend(id, adminId, reason);
+  }
+
+  @Put(':id/reactivate')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Reactivate suspended vendor (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Vendor ID' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vendor reactivated successfully' 
+  })
+  async reactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('_id') adminId: string,
+  ): Promise<VendorResponseDto> {
+    return this.vendorsService.reactivate(id, adminId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get vendor by ID' })
-  findOne(@Param('id') id: string) {
+  @ApiParam({ name: 'id', description: 'Vendor ID' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vendor retrieved successfully',
+    type: VendorResponseDto 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vendor not found' 
+  })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<VendorResponseDto> {
     return this.vendorsService.findOne(id);
   }
 
-  @Post('kyc/bio-data')
-  @ApiOperation({ summary: 'Submit vendor KYC bio-data' })
-  async kycBioData(
-    @CurrentUser('_id') userId: string,
-    @Body() bioDto: VendorBioDto,
-  ) {
-    return this.vendorsService.kycBioData(userId, bioDto);
-  }
-
-  @Post('kyc/company-info')
-  @ApiOperation({ summary: 'Submit vendor KYC company info' })
-  async kycCompanyInfo(
-    @CurrentUser('_id') userId: string,
-    @Body() companyDto: VendorCompanyDto,
-  ) {
-    return this.vendorsService.kycCompanyInfo(userId, companyDto);
-  }
-
-  @Post('kyc/documents')
-  @UseInterceptors(FilesInterceptor('documents'))
-  @ApiOperation({ summary: 'Submit vendor KYC documents' })
-  async kycDocuments(
-    @CurrentUser('_id') userId: string,
-    @UploadedFiles() files: Array<Express.Multer.File>,
-    @Body() kycDto: VendorKycDto,
-  ) {
-    return this.vendorsService.kycDocuments(userId, files, kycDto);
-  }
-
-  @Get(':vendorId/products')
-  @ApiOperation({ summary: 'Get products for a vendor' })
-  async getVendorProducts(
-    @Param('vendorId') vendorId: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('status') status?: string,
-    @Query('category') category?: string,
-  ) {
-    return this.vendorsService.getVendorProducts(vendorId, { page, limit, status, category });
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete vendor (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Vendor ID' })
+  @ApiResponse({ 
+    status: HttpStatus.NO_CONTENT, 
+    description: 'Vendor deleted successfully' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vendor not found' 
+  })
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('_id') adminId: string,
+  ): Promise<void> {
+    return this.vendorsService.remove(id, adminId);
   }
 }
