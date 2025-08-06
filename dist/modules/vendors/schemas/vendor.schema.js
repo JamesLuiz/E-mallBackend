@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.VendorSchema = exports.Vendor = exports.Subscription = exports.StoreSettings = void 0;
+exports.VendorSchema = exports.Vendor = exports.Subscription = exports.VendorKycDocuments = exports.StoreSettings = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 let StoreSettings = class StoreSettings {
@@ -22,7 +22,23 @@ __decorate([
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
+], StoreSettings.prototype, "logoUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], StoreSettings.prototype, "logoHash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
 ], StoreSettings.prototype, "banner", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], StoreSettings.prototype, "bannerUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], StoreSettings.prototype, "bannerHash", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ default: '#40F99B' }),
     __metadata("design:type", String)
@@ -38,6 +54,68 @@ __decorate([
 exports.StoreSettings = StoreSettings = __decorate([
     (0, mongoose_1.Schema)()
 ], StoreSettings);
+let VendorKycDocuments = class VendorKycDocuments {
+};
+exports.VendorKycDocuments = VendorKycDocuments;
+__decorate([
+    (0, mongoose_1.Prop)({ enum: ['passport', 'national_id', 'drivers_license'] }),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "identityDocumentType", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "identityDocumentUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "identityDocumentHash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "businessCertificateUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "businessCertificateHash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "taxCertificateUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "taxCertificateHash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "bankStatementUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "bankStatementHash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: 'pending' }),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "verificationStatus", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "verificationNotes", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: Date.now }),
+    __metadata("design:type", Date)
+], VendorKycDocuments.prototype, "submittedAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], VendorKycDocuments.prototype, "verifiedAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], VendorKycDocuments.prototype, "verifiedBy", void 0);
+exports.VendorKycDocuments = VendorKycDocuments = __decorate([
+    (0, mongoose_1.Schema)()
+], VendorKycDocuments);
 let Subscription = class Subscription {
 };
 exports.Subscription = Subscription;
@@ -87,6 +165,10 @@ __decorate([
     (0, mongoose_1.Prop)({ type: StoreSettings }),
     __metadata("design:type", StoreSettings)
 ], Vendor.prototype, "storeSettings", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: VendorKycDocuments }),
+    __metadata("design:type", VendorKycDocuments)
+], Vendor.prototype, "kycDocuments", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ type: Subscription }),
     __metadata("design:type", Subscription)

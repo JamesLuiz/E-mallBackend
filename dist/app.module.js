@@ -22,6 +22,13 @@ const admin_module_1 = require("./modules/admin/admin.module");
 const file_upload_module_1 = require("./modules/file-upload/file-upload.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
+const categories_module_1 = require("./categories/categories.module");
+const analytics_module_1 = require("./analytics/analytics.module");
+const notifications_module_1 = require("./notifications/notifications.module");
+const blog_module_1 = require("./blog/blog.module");
+const careers_module_1 = require("./careers/careers.module");
+const support_module_1 = require("./support/support.module");
+const uploads_module_1 = require("./uploads/uploads.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -47,6 +54,13 @@ exports.AppModule = AppModule = __decorate([
             delivery_module_1.DeliveryModule,
             admin_module_1.AdminModule,
             file_upload_module_1.FileUploadModule,
+            categories_module_1.CategoriesModule,
+            analytics_module_1.AnalyticsModule,
+            notifications_module_1.NotificationsModule,
+            blog_module_1.BlogModule,
+            careers_module_1.CareersModule,
+            support_module_1.SupportModule,
+            uploads_module_1.UploadsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

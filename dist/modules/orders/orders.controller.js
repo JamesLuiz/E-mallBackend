@@ -20,9 +20,10 @@ const roles_guard_1 = require("../../common/guards/roles.guard");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const user_role_enum_1 = require("../../common/enums/user-role.enum");
-const order_status_enum_1 = require("../../common/enums/order-status.enum");
 const orders_service_1 = require("./orders.service");
 const create_order_dto_1 = require("./dto/create-order.dto");
+const update_order_status_dto_1 = require("./dto/update-order-status.dto");
+const order_filter_dto_1 = require("./dto/order-filter.dto");
 let OrdersController = class OrdersController {
     constructor(ordersService) {
         this.ordersService = ordersService;
@@ -30,23 +31,23 @@ let OrdersController = class OrdersController {
     create(userId, createOrderDto) {
         return this.ordersService.create(userId, createOrderDto);
     }
-    findAll() {
-        return this.ordersService.findAll();
+    findAll(filter) {
+        return this.ordersService.findAll(filter);
     }
-    getMyOrders(userId) {
-        return this.ordersService.findByCustomer(userId);
+    getMyOrders(userId, filter) {
+        return this.ordersService.findByCustomer(userId, filter);
     }
-    getVendorOrders(userId) {
-        return this.ordersService.findByVendor(userId);
+    getVendorOrders(userId, filter) {
+        return this.ordersService.findByVendor(userId, filter);
     }
     findOne(id) {
         return this.ordersService.findOne(id);
     }
-    updateStatus(id, status, userId) {
-        return this.ordersService.updateStatus(id, status, userId);
+    updateStatus(id, dto, userId) {
+        return this.ordersService.updateStatus(id, dto, userId);
     }
-    cancel(id, userId) {
-        return this.ordersService.cancel(id, userId);
+    cancel(id, userId, reason) {
+        return this.ordersService.cancel(id, userId, reason);
     }
     track(orderId) {
         return this.ordersService.track(orderId);
@@ -67,16 +68,18 @@ __decorate([
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_role_enum_1.UserRole.ADMIN),
     (0, swagger_1.ApiOperation)({ summary: 'Get all orders (Admin only)' }),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [order_filter_dto_1.OrderFilterDto]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('my-orders'),
     (0, swagger_1.ApiOperation)({ summary: 'Get current user orders' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)('_id')),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, order_filter_dto_1.OrderFilterDto]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "getMyOrders", null);
 __decorate([
@@ -85,8 +88,9 @@ __decorate([
     (0, roles_decorator_1.Roles)(user_role_enum_1.UserRole.VENDOR),
     (0, swagger_1.ApiOperation)({ summary: 'Get vendor orders' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)('_id')),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, order_filter_dto_1.OrderFilterDto]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "getVendorOrders", null);
 __decorate([
@@ -103,10 +107,10 @@ __decorate([
     (0, roles_decorator_1.Roles)(user_role_enum_1.UserRole.VENDOR),
     (0, swagger_1.ApiOperation)({ summary: 'Update order status (Vendor only)' }),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)('status')),
+    __param(1, (0, common_1.Body)()),
     __param(2, (0, current_user_decorator_1.CurrentUser)('_id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, update_order_status_dto_1.UpdateOrderStatusDto, String]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "updateStatus", null);
 __decorate([
@@ -114,8 +118,9 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Cancel order' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('_id')),
+    __param(2, (0, common_1.Body)('reason')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "cancel", null);
 __decorate([

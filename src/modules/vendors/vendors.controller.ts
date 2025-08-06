@@ -38,7 +38,7 @@ export class VendorsController {
     @CurrentUser('_id') userId: string,
     @Body() createVendorDto: CreateVendorDto,
   ) {
-    return this.vendorsService.create(userId, createVendorDto);
+    return this.vendorsService.create(userId, createVendorDto.businessName);
   }
 
   @Get()
@@ -59,10 +59,9 @@ export class VendorsController {
   @ApiOperation({ summary: 'Update vendor profile' })
   async updateProfile(
     @CurrentUser('_id') userId: string,
-    @Body() updateVendorDto: Partial<CreateVendorDto>,
+    @Body() updateVendorDto: any,
   ) {
-    const vendor = await this.vendorsService.findByUserId(userId);
-    return this.vendorsService.update((vendor as any)._id.toString(), updateVendorDto);
+    return this.vendorsService.updateByUserId(userId, updateVendorDto);
   }
 
   @Get('dashboard')

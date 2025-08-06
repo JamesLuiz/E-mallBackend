@@ -8,16 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileUploadModule = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const file_upload_controller_1 = require("./file-upload.controller");
 const file_upload_service_1 = require("./file-upload.service");
+const pinata_service_1 = require("../../common/services/pinata.service");
 let FileUploadModule = class FileUploadModule {
 };
 exports.FileUploadModule = FileUploadModule;
 exports.FileUploadModule = FileUploadModule = __decorate([
     (0, common_1.Module)({
+        imports: [config_1.ConfigModule],
         controllers: [file_upload_controller_1.FileUploadController],
-        providers: [file_upload_service_1.FileUploadService],
-        exports: [file_upload_service_1.FileUploadService],
+        providers: [file_upload_service_1.FileUploadService, pinata_service_1.PinataService],
+        exports: [file_upload_service_1.FileUploadService, pinata_service_1.PinataService],
     })
 ], FileUploadModule);
 //# sourceMappingURL=file-upload.module.js.map

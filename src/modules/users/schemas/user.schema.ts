@@ -90,6 +90,17 @@ export class User {
 
   @Prop()
   refreshToken?: string;
+
+  // Password reset fields
+  @Prop()
+  passwordResetToken?: string;
+
+  @Prop()
+  passwordResetExpires?: Date;
+
+  // Email verification field
+  @Prop()
+  emailVerificationToken?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

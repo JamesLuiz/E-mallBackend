@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserSchema = exports.User = exports.Profile = void 0;
+exports.UserSchema = exports.User = exports.KycDocuments = exports.Profile = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
 const user_role_enum_1 = require("../../../common/enums/user-role.enum");
 let Profile = class Profile {
@@ -43,9 +43,59 @@ __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], Profile.prototype, "avatar", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Profile.prototype, "avatarUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Profile.prototype, "avatarHash", void 0);
 exports.Profile = Profile = __decorate([
     (0, mongoose_1.Schema)()
 ], Profile);
+let KycDocuments = class KycDocuments {
+};
+exports.KycDocuments = KycDocuments;
+__decorate([
+    (0, mongoose_1.Prop)({ enum: ['passport', 'national_id', 'drivers_license'] }),
+    __metadata("design:type", String)
+], KycDocuments.prototype, "identityDocumentType", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], KycDocuments.prototype, "identityDocumentUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], KycDocuments.prototype, "identityDocumentHash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], KycDocuments.prototype, "proofOfAddressUri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], KycDocuments.prototype, "proofOfAddressHash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: 'pending' }),
+    __metadata("design:type", String)
+], KycDocuments.prototype, "verificationStatus", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], KycDocuments.prototype, "verificationNotes", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: Date.now }),
+    __metadata("design:type", Date)
+], KycDocuments.prototype, "submittedAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], KycDocuments.prototype, "verifiedAt", void 0);
+exports.KycDocuments = KycDocuments = __decorate([
+    (0, mongoose_1.Schema)()
+], KycDocuments);
 let User = class User {
 };
 exports.User = User;
@@ -66,6 +116,10 @@ __decorate([
     __metadata("design:type", Profile)
 ], User.prototype, "profile", void 0);
 __decorate([
+    (0, mongoose_1.Prop)({ type: KycDocuments }),
+    __metadata("design:type", KycDocuments)
+], User.prototype, "kycDocuments", void 0);
+__decorate([
     (0, mongoose_1.Prop)({ default: true }),
     __metadata("design:type", Boolean)
 ], User.prototype, "isActive", void 0);
@@ -77,6 +131,18 @@ __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], User.prototype, "refreshToken", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "passwordResetToken", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], User.prototype, "passwordResetExpires", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "emailVerificationToken", void 0);
 exports.User = User = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], User);

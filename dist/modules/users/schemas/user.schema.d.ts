@@ -9,15 +9,32 @@ export declare class Profile {
     city: string;
     state: string;
     avatar: string;
+    avatarUri: string;
+    avatarHash: string;
+}
+export declare class KycDocuments {
+    identityDocumentType: string;
+    identityDocumentUri: string;
+    identityDocumentHash: string;
+    proofOfAddressUri: string;
+    proofOfAddressHash: string;
+    verificationStatus: 'pending' | 'approved' | 'rejected';
+    verificationNotes: string;
+    submittedAt: Date;
+    verifiedAt: Date;
 }
 export declare class User {
     email: string;
     password: string;
     role: UserRole;
     profile: Profile;
+    kycDocuments: KycDocuments;
     isActive: boolean;
     emailVerified: boolean;
     refreshToken?: string;
+    passwordResetToken?: string;
+    passwordResetExpires?: Date;
+    emailVerificationToken?: string;
 }
 export declare const UserSchema: import("mongoose").Schema<User, import("mongoose").Model<User, any, any, any, Document<unknown, any, User> & User & {
     _id: import("mongoose").Types.ObjectId;

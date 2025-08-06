@@ -5,6 +5,7 @@ import { Vendor, VendorDocument, VendorKycDocuments } from './schemas/vendor.sch
 import { VendorBioDto } from './dto/vendor-bio.dto';
 import { VendorCompanyDto } from './dto/vendor-company.dto';
 import { VendorKycDto } from './dto/vendor-kyc.dto';
+import { VendorQueryDto } from './dto/vendor-query.dto';
 import { FileUploadResult } from '../../common/services/pinata.service';
 
 @Injectable()
@@ -26,8 +27,61 @@ export class VendorsService {
     return vendor.save();
   }
 
-  async findAll(): Promise<VendorDocument[]> {
-    return this.vendorModel.find().populate('userId', 'email profile').exec();
+  async findAll(query?: VendorQueryDto): Promise<VendorDocument[]> {
+    const filter: any = {};
+    const sort: any = {};
+
+    if (query) {
+      // Search filter
+      if (query.search) {
+        filter.$or = [
+          { businessName: { $regex: query.search, $options: 'i' } },
+          { businessDescription: { $regex: query.search, $options: 'i' } },
+        ];
+      }
+
+      // Verification filters
+      if (query.verified !== undefined) {
+        filter.verified = query.verified;
+      }
+
+      if (query.verificationStatus) {
+        filter['kycDocuments.verificationStatus'] = query.verificationStatus;
+      }
+
+      // Rating filters
+      if (query.minRating !== undefined) {
+        filter.rating = { ...filter.rating, $gte: query.minRating };
+      }
+
+      if (query.maxRating !== undefined) {
+        filter.rating = { ...filter.rating, $lte: query.maxRating };
+      }
+
+      // Location filters
+      if (query.city) {
+        filter.businessAddress = { $regex: query.city, $options: 'i' };
+      }
+
+      // Sorting
+      if (query.sortBy) {
+        sort[query.sortBy] = query.sortOrder === 'desc' ? -1 : 1;
+      } else {
+        sort.createdAt = -1; // Default sort by creation date
+      }
+    }
+
+    const queryBuilder = this.vendorModel
+      .find(filter)
+      .populate('userId', 'email profile')
+      .sort(sort);
+
+    if (query?.page && query?.limit) {
+      const skip = (query.page - 1) * query.limit;
+      queryBuilder.skip(skip).limit(query.limit);
+    }
+
+    return queryBuilder.exec();
   }
 
   async findOne(id: string): Promise<VendorDocument> {
@@ -63,6 +117,17 @@ export class VendorsService {
     return updatedVendor;
   }
 
+  async updateByUserId(userId: string, updateVendorDto: Partial<Vendor>): Promise<VendorDocument> {
+    const updatedVendor = await this.vendorModel
+      .findOneAndUpdate({ userId }, updateVendorDto, { new: true })
+      .populate('userId', 'email profile')
+      .exec();
+    if (!updatedVendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return updatedVendor;
+  }
+
   async remove(id: string): Promise<void> {
     const result = await this.vendorModel.findByIdAndDelete(id).exec();
     if (!result) {
@@ -75,6 +140,92 @@ export class VendorsService {
       .find({ verified: true })
       .populate('userId', 'email profile')
       .exec();
+  }
+
+  async findPendingVendors(): Promise<VendorDocument[]> {
+    return this.vendorModel
+      .find({ 'kycDocuments.verificationStatus': 'pending' })
+      .populate('userId', 'email profile')
+      .exec();
+  }
+
+  async approve(id: string): Promise<VendorDocument> {
+    const vendor = await this.vendorModel
+      .findByIdAndUpdate(
+        id,
+        { 
+          verified: true,
+          'kycDocuments.verificationStatus': 'approved',
+          'kycDocuments.verifiedAt': new Date()
+        },
+        { new: true }
+      )
+      .populate('userId', 'email profile')
+      .exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async reject(id: string, reason?: string): Promise<VendorDocument> {
+    const vendor = await this.vendorModel
+      .findByIdAndUpdate(
+        id,
+        { 
+          verified: false,
+          'kycDocuments.verificationStatus': 'rejected',
+          'kycDocuments.verificationNotes': reason,
+          'kycDocuments.verifiedAt': new Date()
+        },
+        { new: true }
+      )
+      .populate('userId', 'email profile')
+      .exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async suspend(id: string, reason?: string): Promise<VendorDocument> {
+    const vendor = await this.vendorModel
+      .findByIdAndUpdate(
+        id,
+        { 
+          verified: false,
+          // Add suspension fields if needed
+        },
+        { new: true }
+      )
+      .populate('userId', 'email profile')
+      .exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
+  }
+
+  async reactivate(id: string): Promise<VendorDocument> {
+    const vendor = await this.vendorModel
+      .findByIdAndUpdate(
+        id,
+        { 
+          verified: true,
+          // Remove suspension fields if needed
+        },
+        { new: true }
+      )
+      .populate('userId', 'email profile')
+      .exec();
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+    return vendor;
   }
 
   async getTopRated(limit: number = 10): Promise<VendorDocument[]> {
@@ -94,6 +245,49 @@ export class VendorsService {
     );
     if (!vendor) throw new NotFoundException('Vendor not found');
     return vendor;
+  }
+
+  async getDashboardData(userId: string) {
+    const vendor = await this.findByUserId(userId);
+    
+    // Mock dashboard data - in real implementation, fetch from products/orders
+    return {
+      vendor,
+      stats: {
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        averageRating: vendor.rating,
+      },
+      recentOrders: [],
+      salesChart: [],
+    };
+  }
+
+  async getAnalytics(userId: string, period?: string) {
+    const vendor = await this.findByUserId(userId);
+    
+    // Mock analytics data
+    return {
+      vendor,
+      period: period || 'month',
+      analytics: {
+        salesOvertime: [],
+        topProducts: [],
+        customerInsights: [],
+        revenueBreakdown: [],
+      },
+    };
+  }
+
+  async getVendorProducts(vendorId: string, query: { page?: number; limit?: number; status?: string; category?: string }) {
+    // TODO: Integrate with products service/model
+    // For now, return mock data
+    return {
+      vendorId,
+      products: [],
+      pagination: { page: query.page || 1, limit: query.limit || 10, total: 0 },
+    };
   }
 
   async kycBioData(userId: string, bioDto: VendorBioDto) {

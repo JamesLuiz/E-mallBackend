@@ -194,7 +194,7 @@ export class OrdersService {
       delivery: order.delivery,
       estimatedDelivery: order.delivery.estimatedTime,
       timeline: [
-        { status: 'Order Placed', date: order.createdAt, completed: true },
+        { status: 'Order Placed', date: (order as any).createdAt, completed: true },
         { status: 'Order Confirmed', date: null, completed: order.status !== OrderStatus.PENDING },
         { status: 'Shipped', date: null, completed: order.status === OrderStatus.SHIPPED || order.status === OrderStatus.DELIVERED },
         { status: 'Delivered', date: null, completed: order.status === OrderStatus.DELIVERED },

@@ -4,6 +4,13 @@ export declare class Inventory {
     stock: number;
     lowStockAlert: number;
 }
+export declare class ProductImage {
+    uri: string;
+    hash: string;
+    originalName: string;
+    isPrimary: boolean;
+    uploadedAt: Date;
+}
 export declare class Product {
     vendorId: Types.ObjectId;
     name: string;
@@ -13,6 +20,7 @@ export declare class Product {
     price: number;
     discount: number;
     images: string[];
+    imageUris: ProductImage[];
     inventory: Inventory;
     specifications: Record<string, any>;
     isActive: boolean;

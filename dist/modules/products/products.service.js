@@ -97,6 +97,85 @@ let ProductsService = class ProductsService {
     async updateInventory(productId, quantity) {
         await this.productModel.findByIdAndUpdate(productId, { $inc: { 'inventory.stock': -quantity } }).exec();
     }
+    async uploadImages(productId, userId, files) {
+        const imageUrls = files.map(f => `uploads/products/${f.filename || f.originalname}`);
+        const product = await this.findOne(productId);
+        const vendor = await this.vendorsService.findByUserId(userId);
+        if (product.vendorId.toString() !== vendor._id.toString()) {
+            throw new common_1.ForbiddenException('You can only update your own products');
+        }
+        product.images = [...(product.images || []), ...imageUrls];
+        await product.save();
+        return product;
+    }
+    async addProductImages(productId, userId, uploadResults) {
+        const product = await this.findOne(productId);
+        const vendor = await this.vendorsService.findByUserId(userId);
+        if (product.vendorId.toString() !== vendor._id.toString()) {
+            throw new common_1.ForbiddenException('You can only update your own products');
+        }
+        const productImages = uploadResults.map(result => ({
+            uri: result.uri,
+            hash: result.hash,
+            originalName: result.originalName,
+            isPrimary: false,
+            uploadedAt: new Date(),
+        }));
+        if (!product.imageUris || product.imageUris.length === 0) {
+            productImages[0].isPrimary = true;
+        }
+        const updatedProduct = await this.productModel
+            .findByIdAndUpdate(productId, {
+            $push: { imageUris: { $each: productImages } },
+            $addToSet: { images: { $each: uploadResults.map(r => r.uri) } },
+        }, { new: true, runValidators: true })
+            .populate('vendorId', 'businessName storeSettings')
+            .exec();
+        return updatedProduct;
+    }
+    async setPrimaryImage(productId, userId, imageHash) {
+        const product = await this.findOne(productId);
+        const vendor = await this.vendorsService.findByUserId(userId);
+        if (product.vendorId.toString() !== vendor._id.toString()) {
+            throw new common_1.ForbiddenException('You can only update your own products');
+        }
+        await this.productModel.updateOne({ _id: productId }, { $set: { 'imageUris.$[].isPrimary': false } });
+        const updatedProduct = await this.productModel
+            .findOneAndUpdate({ _id: productId, 'imageUris.hash': imageHash }, { $set: { 'imageUris.$.isPrimary': true } }, { new: true, runValidators: true })
+            .populate('vendorId', 'businessName storeSettings')
+            .exec();
+        return updatedProduct;
+    }
+    async removeProductImage(productId, userId, imageHash) {
+        const product = await this.findOne(productId);
+        const vendor = await this.vendorsService.findByUserId(userId);
+        if (product.vendorId.toString() !== vendor._id.toString()) {
+            throw new common_1.ForbiddenException('You can only update your own products');
+        }
+        const updatedProduct = await this.productModel
+            .findByIdAndUpdate(productId, {
+            $pull: {
+                imageUris: { hash: imageHash },
+                images: { $in: [product.imageUris?.find(img => img.hash === imageHash)?.uri] }
+            }
+        }, { new: true, runValidators: true })
+            .populate('vendorId', 'businessName storeSettings')
+            .exec();
+        return updatedProduct;
+    }
+    async getProductImages(productId) {
+        const product = await this.productModel.findById(productId).select('imageUris').exec();
+        if (!product) {
+            throw new common_1.NotFoundException('Product not found');
+        }
+        return product.imageUris || [];
+    }
+    async getFeatured() {
+        return this.productModel.find({ featured: true, isActive: true }).exec();
+    }
+    async getTrending() {
+        return this.productModel.find({ isActive: true }).sort({ sales: -1 }).limit(10).exec();
+    }
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([

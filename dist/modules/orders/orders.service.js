@@ -74,26 +74,68 @@ let OrdersService = class OrdersService {
         }
         return savedOrder;
     }
-    async findAll() {
+    async findAll(filter = {}) {
+        const query = {};
+        if (filter.status)
+            query.status = filter.status;
+        if (filter.startDate || filter.endDate) {
+            query.createdAt = {};
+            if (filter.startDate)
+                query.createdAt.$gte = new Date(filter.startDate);
+            if (filter.endDate)
+                query.createdAt.$lte = new Date(filter.endDate);
+        }
+        const page = filter.page || 1;
+        const limit = filter.limit || 20;
         return this.orderModel
-            .find()
+            .find(query)
+            .skip((page - 1) * limit)
+            .limit(limit)
             .populate('customerId', 'email profile')
             .populate('vendorId', 'businessName')
             .populate('items.productId', 'name images')
             .exec();
     }
-    async findByCustomer(customerId) {
+    async findByCustomer(customerId, filter = {}) {
+        const query = { customerId };
+        if (filter.status)
+            query.status = filter.status;
+        if (filter.startDate || filter.endDate) {
+            query.createdAt = {};
+            if (filter.startDate)
+                query.createdAt.$gte = new Date(filter.startDate);
+            if (filter.endDate)
+                query.createdAt.$lte = new Date(filter.endDate);
+        }
+        const page = filter.page || 1;
+        const limit = filter.limit || 20;
         return this.orderModel
-            .find({ customerId })
+            .find(query)
+            .skip((page - 1) * limit)
+            .limit(limit)
             .populate('vendorId', 'businessName storeSettings')
             .populate('items.productId', 'name images')
             .sort({ createdAt: -1 })
             .exec();
     }
-    async findByVendor(userId) {
+    async findByVendor(userId, filter = {}) {
         const vendor = await this.vendorsService.findByUserId(userId);
+        const query = { vendorId: vendor._id };
+        if (filter.status)
+            query.status = filter.status;
+        if (filter.startDate || filter.endDate) {
+            query.createdAt = {};
+            if (filter.startDate)
+                query.createdAt.$gte = new Date(filter.startDate);
+            if (filter.endDate)
+                query.createdAt.$lte = new Date(filter.endDate);
+        }
+        const page = filter.page || 1;
+        const limit = filter.limit || 20;
         return this.orderModel
-            .find({ vendorId: vendor._id })
+            .find(query)
+            .skip((page - 1) * limit)
+            .limit(limit)
             .populate('customerId', 'email profile')
             .populate('items.productId', 'name images')
             .sort({ createdAt: -1 })
@@ -111,21 +153,28 @@ let OrdersService = class OrdersService {
         }
         return order;
     }
-    async updateStatus(id, status, userId) {
+    async updateStatus(id, dto, userId) {
         const order = await this.findOne(id);
         const vendor = await this.vendorsService.findByUserId(userId);
         if (order.vendorId.toString() !== vendor._id.toString()) {
             throw new common_1.BadRequestException('You can only update your own orders');
         }
+        const update = { status: dto.status };
+        if (dto.note)
+            update.note = dto.note;
+        if (dto.trackingNumber)
+            update['delivery.trackingNumber'] = dto.trackingNumber;
+        if (dto.carrier)
+            update['delivery.carrier'] = dto.carrier;
         const updatedOrder = await this.orderModel
-            .findByIdAndUpdate(id, { status }, { new: true })
+            .findByIdAndUpdate(id, update, { new: true })
             .populate('customerId', 'email profile')
             .populate('vendorId', 'businessName')
             .populate('items.productId', 'name images')
             .exec();
         return updatedOrder;
     }
-    async cancel(id, userId) {
+    async cancel(id, userId, reason) {
         const order = await this.findOne(id);
         if (order.customerId.toString() !== userId) {
             throw new common_1.BadRequestException('You can only cancel your own orders');
@@ -133,7 +182,7 @@ let OrdersService = class OrdersService {
         if (![order_status_enum_1.OrderStatus.PENDING, order_status_enum_1.OrderStatus.CONFIRMED].includes(order.status)) {
             throw new common_1.BadRequestException('Order cannot be cancelled at this stage');
         }
-        return this.updateOrderStatus(id, order_status_enum_1.OrderStatus.CANCELLED);
+        return this.updateOrderStatus(id, order_status_enum_1.OrderStatus.CANCELLED, reason);
     }
     async track(orderId) {
         const order = await this.findOne(orderId);
@@ -150,9 +199,12 @@ let OrdersService = class OrdersService {
             ],
         };
     }
-    async updateOrderStatus(id, status) {
+    async updateOrderStatus(id, status, reason) {
+        const update = { status };
+        if (reason)
+            update.cancelReason = reason;
         return this.orderModel
-            .findByIdAndUpdate(id, { status }, { new: true })
+            .findByIdAndUpdate(id, update, { new: true })
             .populate('customerId', 'email profile')
             .populate('vendorId', 'businessName')
             .populate('items.productId', 'name images')

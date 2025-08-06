@@ -23,7 +23,7 @@ export declare class AdminController {
         recentVendors: any[];
         salesChart: any[];
     }>;
-    getAllVendors(): Promise<import("../vendors/schemas/vendor.schema").Vendor[]>;
+    getAllVendors(): Promise<import("../vendors/schemas/vendor.schema").VendorDocument[]>;
     getAllOrders(): Promise<import("../orders/schemas/order.schema").OrderDocument[]>;
     getAnalytics(): Promise<{
         analytics: {

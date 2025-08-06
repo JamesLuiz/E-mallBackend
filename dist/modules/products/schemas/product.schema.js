@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProductSchema = exports.Product = exports.Inventory = void 0;
+exports.ProductSchema = exports.Product = exports.ProductImage = exports.Inventory = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 let Inventory = class Inventory {
@@ -26,6 +26,32 @@ __decorate([
 exports.Inventory = Inventory = __decorate([
     (0, mongoose_1.Schema)()
 ], Inventory);
+let ProductImage = class ProductImage {
+};
+exports.ProductImage = ProductImage;
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ProductImage.prototype, "uri", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ProductImage.prototype, "hash", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ProductImage.prototype, "originalName", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], ProductImage.prototype, "isPrimary", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: Date.now }),
+    __metadata("design:type", Date)
+], ProductImage.prototype, "uploadedAt", void 0);
+exports.ProductImage = ProductImage = __decorate([
+    (0, mongoose_1.Schema)()
+], ProductImage);
 let Product = class Product {
 };
 exports.Product = Product;
@@ -61,6 +87,10 @@ __decorate([
     (0, mongoose_1.Prop)({ type: [String], default: [] }),
     __metadata("design:type", Array)
 ], Product.prototype, "images", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: [ProductImage], default: [] }),
+    __metadata("design:type", Array)
+], Product.prototype, "imageUris", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ type: Inventory, required: true }),
     __metadata("design:type", Inventory)

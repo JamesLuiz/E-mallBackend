@@ -24,11 +24,15 @@ export class PinataService {
 
   constructor(private configService: ConfigService) {
     const jwt = this.configService.get<string>('PINATA_JWT');
+    const gateway = this.configService.get<string>('PINATA_GATEWAY');
+    
     if (!jwt) {
       throw new Error('PINATA_JWT environment variable is required');
     }
+    
     this.pinata = new PinataSDK({
       pinataJwt: jwt,
+      pinataGateway: gateway,
     });
   }
 
@@ -50,24 +54,26 @@ export class PinataService {
         type: file.mimetype,
       });
 
-      // Upload to Pinata with metadata
-      const upload = await this.pinata.upload.file(fileObj, {
-        metadata: {
-          name: file.originalname,
-          keyValues: {
-            fileType,
-            uploadedAt: new Date().toISOString(),
-            originalSize: file.size.toString(),
-            mimeType: file.mimetype,
-            ...metadata,
-          },
-        },
-        groupId: this.getGroupId(fileType),
+      // Upload to Pinata using private network by default for security
+      const upload = await this.pinata.upload.private.file(fileObj)
+        .name(file.originalname)
+        .keyvalues({
+          fileType,
+          uploadedAt: new Date().toISOString(),
+          originalSize: file.size.toString(),
+          mimeType: file.mimetype,
+          ...metadata,
+        });
+
+      // Create signed access link for private files
+      const signedUrl = await this.pinata.gateways.private.createAccessLink({
+        cid: upload.cid,
+        expires: 31536000, // 1 year in seconds
       });
 
       return {
-        uri: `https://gateway.pinata.cloud/ipfs/${upload.IpfsHash}`,
-        hash: upload.IpfsHash,
+        uri: signedUrl,
+        hash: upload.cid,
         size: file.size,
         originalName: file.originalname,
       };
@@ -146,36 +152,31 @@ export class PinataService {
     return rules[fileType] || rules[FileType.GENERAL];
   }
 
-  private getGroupId(fileType: FileType): string {
-    // Group files by type for better organization in Pinata
-    const groupMap = {
-      [FileType.PROFILE_PICTURE]: 'profile-pics',
-      [FileType.PRODUCT_IMAGE]: 'product-images',
-      [FileType.KYC_DOCUMENT]: 'kyc-docs',
-      [FileType.VENDOR_LOGO]: 'vendor-assets',
-      [FileType.VENDOR_BANNER]: 'vendor-assets',
-      [FileType.GENERAL]: 'general-files',
-    };
-
-    return groupMap[fileType] || groupMap[FileType.GENERAL];
-  }
-
-  async deleteFile(hash: string): Promise<boolean> {
+  async deleteFile(cid: string): Promise<boolean> {
     try {
-      await this.pinata.unpin([hash]);
-      return true;
+      // Get file ID first, then delete
+      const files = await this.pinata.files.private.list()
+        .cid(cid);
+      
+      if (files.files && files.files.length > 0) {
+        const fileId = files.files[0].id;
+        await this.pinata.files.private.delete([fileId]);
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Pinata delete error:', error);
       return false;
     }
   }
 
-  async getFileInfo(hash: string) {
+  async getFileInfo(cid: string) {
     try {
-      const files = await this.pinata.listFiles().metadata({
-        name: hash,
-      });
-      return files.files[0] || null;
+      const files = await this.pinata.files.private.list()
+        .cid(cid);
+        
+      return files.files && files.files.length > 0 ? files.files[0] : null;
     } catch (error) {
       console.error('Pinata get file info error:', error);
       return null;
