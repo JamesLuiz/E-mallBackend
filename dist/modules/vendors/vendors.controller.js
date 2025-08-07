@@ -30,7 +30,7 @@ let VendorsController = class VendorsController {
         this.vendorsService = vendorsService;
     }
     async create(userId, createVendorDto) {
-        return this.vendorsService.create(userId, createVendorDto);
+        return this.vendorsService.create(userId, createVendorDto.businessName);
     }
     async findAll(query) {
         return this.vendorsService.findAll(query);
@@ -51,22 +51,22 @@ let VendorsController = class VendorsController {
         return this.vendorsService.findPendingVendors();
     }
     async approve(id, adminId) {
-        return this.vendorsService.approve(id, adminId);
+        return this.vendorsService.approve(id);
     }
     async reject(id, adminId, reason) {
-        return this.vendorsService.reject(id, adminId, reason);
+        return this.vendorsService.reject(id, reason);
     }
     async suspend(id, adminId, reason) {
-        return this.vendorsService.suspend(id, adminId, reason);
+        return this.vendorsService.suspend(id, reason);
     }
     async reactivate(id, adminId) {
-        return this.vendorsService.reactivate(id, adminId);
+        return this.vendorsService.reactivate(id);
     }
     async findOne(id) {
         return this.vendorsService.findOne(id);
     }
     async remove(id, adminId) {
-        return this.vendorsService.remove(id, adminId);
+        return this.vendorsService.remove(id);
     }
 };
 exports.VendorsController = VendorsController;
@@ -92,13 +92,13 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({ summary: 'Get all verified vendors with optional filtering' }),
-    (0, swagger_1.ApiQuery)({ name: 'category', required: false, description: 'Filter by category' }),
-    (0, swagger_1.ApiQuery)({ name: 'location', required: false, description: 'Filter by location' }),
+    (0, swagger_1.ApiQuery)({ name: 'search', required: false, description: 'Search vendors by name or description' }),
+    (0, swagger_1.ApiQuery)({ name: 'verified', required: false, description: 'Filter by verification status' }),
     (0, swagger_1.ApiQuery)({ name: 'page', required: false, description: 'Page number for pagination' }),
     (0, swagger_1.ApiQuery)({ name: 'limit', required: false, description: 'Number of items per page' }),
     (0, swagger_1.ApiResponse)({
         status: common_1.HttpStatus.OK,
-        description: 'List of verified vendors',
+        description: 'List of vendors',
         type: [vendor_response_dto_1.VendorResponseDto]
     }),
     __param(0, (0, common_1.Query)()),
@@ -198,7 +198,7 @@ __decorate([
         status: common_1.HttpStatus.NOT_FOUND,
         description: 'Vendor not found'
     }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('_id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
@@ -217,7 +217,7 @@ __decorate([
         status: common_1.HttpStatus.NOT_FOUND,
         description: 'Vendor not found'
     }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('_id')),
     __param(2, (0, common_1.Body)('reason')),
     __metadata("design:type", Function),
@@ -233,7 +233,7 @@ __decorate([
         status: common_1.HttpStatus.OK,
         description: 'Vendor suspended successfully'
     }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('_id')),
     __param(2, (0, common_1.Body)('reason')),
     __metadata("design:type", Function),
@@ -249,7 +249,7 @@ __decorate([
         status: common_1.HttpStatus.OK,
         description: 'Vendor reactivated successfully'
     }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('_id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
@@ -268,7 +268,7 @@ __decorate([
         status: common_1.HttpStatus.NOT_FOUND,
         description: 'Vendor not found'
     }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
@@ -286,7 +286,7 @@ __decorate([
         status: common_1.HttpStatus.NOT_FOUND,
         description: 'Vendor not found'
     }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('_id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),

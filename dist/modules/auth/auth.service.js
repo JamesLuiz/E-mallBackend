@@ -43,7 +43,7 @@ let AuthService = class AuthService {
             user: {
                 id: user._id,
                 email: user.email,
-                role: user.role,
+                roles: user.roles,
                 profile: user.profile,
             },
         };
@@ -57,7 +57,7 @@ let AuthService = class AuthService {
         try {
             const payload = this.jwtService.verify(token);
             const user = await this.usersService.findOneDocument(payload.sub);
-            const newPayload = { email: user.email, sub: user._id, role: user.role };
+            const newPayload = { email: user.email, sub: user._id, roles: user.roles };
             const accessToken = this.jwtService.sign(newPayload);
             return { access_token: accessToken };
         }

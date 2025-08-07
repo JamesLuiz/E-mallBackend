@@ -6,6 +6,8 @@ import { User, UserDocument, KycDocuments } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { FileUploadResult } from '../../common/services/pinata.service';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { UserRole } from '../../common/enums/user-role.enum';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +18,7 @@ export class UsersService {
     const createdUser = new this.userModel({
       ...createUserDto,
       password: hashedPassword,
+      roles: createUserDto.roles || [UserRole.CUSTOMER],
     });
     return createdUser.save();
   }

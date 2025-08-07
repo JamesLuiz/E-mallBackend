@@ -18,6 +18,7 @@ const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const bcrypt = require("bcrypt");
 const user_schema_1 = require("./schemas/user.schema");
+const user_role_enum_1 = require("../../common/enums/user-role.enum");
 let UsersService = class UsersService {
     constructor(userModel) {
         this.userModel = userModel;
@@ -27,6 +28,7 @@ let UsersService = class UsersService {
         const createdUser = new this.userModel({
             ...createUserDto,
             password: hashedPassword,
+            roles: createUserDto.roles || [user_role_enum_1.UserRole.CUSTOMER],
         });
         return createdUser.save();
     }

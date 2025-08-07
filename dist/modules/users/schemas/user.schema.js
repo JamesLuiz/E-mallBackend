@@ -109,8 +109,8 @@ __decorate([
 ], User.prototype, "password", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ enum: user_role_enum_1.UserRole, default: user_role_enum_1.UserRole.CUSTOMER }),
-    __metadata("design:type", String)
-], User.prototype, "role", void 0);
+    __metadata("design:type", Array)
+], User.prototype, "roles", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ type: Profile }),
     __metadata("design:type", Profile)

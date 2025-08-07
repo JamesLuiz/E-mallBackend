@@ -30,9 +30,9 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({ enum: user_role_enum_1.UserRole, default: user_role_enum_1.UserRole.CUSTOMER }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(user_role_enum_1.UserRole),
-    __metadata("design:type", String)
-], CreateUserDto.prototype, "role", void 0);
+    (0, class_validator_1.IsEnum)(user_role_enum_1.UserRole, { each: true }),
+    __metadata("design:type", Array)
+], CreateUserDto.prototype, "roles", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ required: false }),
     (0, class_validator_1.IsOptional)(),

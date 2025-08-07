@@ -74,7 +74,7 @@ export class User {
   password: string;
 
   @Prop({ enum: UserRole, default: UserRole.CUSTOMER })
-  role: UserRole;
+  roles: UserRole[];
 
   @Prop({ type: Profile })
   profile: Profile;

@@ -9,7 +9,6 @@ import {
   Query,
   UseGuards,
   HttpStatus,
-  ParseUUIDPipe,
 } from '@nestjs/common';
 import { 
   ApiTags, 
@@ -19,6 +18,7 @@ import {
   ApiParam,
   ApiQuery 
 } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -53,22 +53,24 @@ export class VendorsController {
     @CurrentUser('_id') userId: string,
     @Body() createVendorDto: CreateVendorDto,
   ): Promise<VendorResponseDto> {
-    return this.vendorsService.create(userId, createVendorDto);
+    const vendor = await this.vendorsService.create(userId, createVendorDto.businessName);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all verified vendors with optional filtering' })
-  @ApiQuery({ name: 'category', required: false, description: 'Filter by category' })
-  @ApiQuery({ name: 'location', required: false, description: 'Filter by location' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search vendors by name or description' })
+  @ApiQuery({ name: 'verified', required: false, description: 'Filter by verification status' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number for pagination' })
   @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
   @ApiResponse({ 
     status: HttpStatus.OK, 
-    description: 'List of verified vendors',
+    description: 'List of vendors',
     type: [VendorResponseDto] 
   })
   async findAll(@Query() query: VendorQueryDto): Promise<VendorResponseDto[]> {
-    return this.vendorsService.findAll(query);
+    const vendors = await this.vendorsService.findAll(query);
+    return plainToInstance(VendorResponseDto, vendors.map(vendor => vendor.toObject()));
   }
 
   @Get('profile')
@@ -84,7 +86,8 @@ export class VendorsController {
     description: 'Vendor profile not found' 
   })
   async getProfile(@CurrentUser('_id') userId: string): Promise<VendorResponseDto> {
-    return this.vendorsService.findByUserId(userId);
+    const vendor = await this.vendorsService.findByUserId(userId);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Put('profile')
@@ -103,7 +106,8 @@ export class VendorsController {
     @CurrentUser('_id') userId: string,
     @Body() updateVendorDto: UpdateVendorDto,
   ): Promise<VendorResponseDto> {
-    return this.vendorsService.updateByUserId(userId, updateVendorDto);
+    const vendor = await this.vendorsService.updateByUserId(userId, updateVendorDto);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Get('dashboard')
@@ -141,7 +145,8 @@ export class VendorsController {
     type: [VendorResponseDto] 
   })
   async getPendingVendors(): Promise<VendorResponseDto[]> {
-    return this.vendorsService.findPendingVendors();
+    const vendors = await this.vendorsService.findPendingVendors();
+    return plainToInstance(VendorResponseDto, vendors.map(vendor => vendor.toObject()));
   }
 
   @Put(':id/approve')
@@ -158,10 +163,11 @@ export class VendorsController {
     description: 'Vendor not found' 
   })
   async approve(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('_id') adminId: string,
   ): Promise<VendorResponseDto> {
-    return this.vendorsService.approve(id, adminId);
+    const vendor = await this.vendorsService.approve(id);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Put(':id/reject')
@@ -177,11 +183,12 @@ export class VendorsController {
     description: 'Vendor not found' 
   })
   async reject(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('_id') adminId: string,
     @Body('reason') reason?: string,
   ): Promise<VendorResponseDto> {
-    return this.vendorsService.reject(id, adminId, reason);
+    const vendor = await this.vendorsService.reject(id, reason);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Put(':id/suspend')
@@ -193,11 +200,12 @@ export class VendorsController {
     description: 'Vendor suspended successfully' 
   })
   async suspend(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('_id') adminId: string,
     @Body('reason') reason?: string,
   ): Promise<VendorResponseDto> {
-    return this.vendorsService.suspend(id, adminId, reason);
+    const vendor = await this.vendorsService.suspend(id, reason);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Put(':id/reactivate')
@@ -209,10 +217,11 @@ export class VendorsController {
     description: 'Vendor reactivated successfully' 
   })
   async reactivate(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('_id') adminId: string,
   ): Promise<VendorResponseDto> {
-    return this.vendorsService.reactivate(id, adminId);
+    const vendor = await this.vendorsService.reactivate(id);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Get(':id')
@@ -227,8 +236,9 @@ export class VendorsController {
     status: HttpStatus.NOT_FOUND, 
     description: 'Vendor not found' 
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<VendorResponseDto> {
-    return this.vendorsService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<VendorResponseDto> {
+    const vendor = await this.vendorsService.findOne(id);
+    return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 
   @Delete(':id')
@@ -244,9 +254,9 @@ export class VendorsController {
     description: 'Vendor not found' 
   })
   async remove(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('_id') adminId: string,
   ): Promise<void> {
-    return this.vendorsService.remove(id, adminId);
+    return this.vendorsService.remove(id);
   }
 }

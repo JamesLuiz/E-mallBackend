@@ -13,7 +13,7 @@ export declare class AuthService {
         user: {
             id: any;
             email: any;
-            role: any;
+            roles: any;
             profile: any;
         };
     }>;

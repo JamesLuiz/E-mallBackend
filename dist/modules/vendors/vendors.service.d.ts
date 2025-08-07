@@ -14,13 +14,13 @@ export declare class VendorsService {
     findByUserId(userId: string): Promise<VendorDocument>;
     update(id: string, updateVendorDto: Partial<Vendor>): Promise<VendorDocument>;
     updateByUserId(userId: string, updateVendorDto: Partial<Vendor>): Promise<VendorDocument>;
-    remove(id: string): Promise<void>;
+    remove(id: string, adminId?: string): Promise<void>;
     getVerified(): Promise<VendorDocument[]>;
     findPendingVendors(): Promise<VendorDocument[]>;
-    approve(id: string): Promise<VendorDocument>;
-    reject(id: string, reason?: string): Promise<VendorDocument>;
-    suspend(id: string, reason?: string): Promise<VendorDocument>;
-    reactivate(id: string): Promise<VendorDocument>;
+    approve(id: string, adminId?: string): Promise<VendorDocument>;
+    reject(id: string, adminId?: string, reason?: string): Promise<VendorDocument>;
+    suspend(id: string, adminId?: string, reason?: string): Promise<VendorDocument>;
+    reactivate(id: string, adminId?: string): Promise<VendorDocument>;
     getTopRated(limit?: number): Promise<VendorDocument[]>;
     updateRating(vendorId: string, newRating: number): Promise<VendorDocument>;
     getDashboardData(userId: string): Promise<{

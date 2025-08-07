@@ -114,7 +114,7 @@ let VendorsService = class VendorsService {
         }
         return updatedVendor;
     }
-    async remove(id) {
+    async remove(id, adminId) {
         const result = await this.vendorModel.findByIdAndDelete(id).exec();
         if (!result) {
             throw new common_1.NotFoundException('Vendor not found');
@@ -132,7 +132,7 @@ let VendorsService = class VendorsService {
             .populate('userId', 'email profile')
             .exec();
     }
-    async approve(id) {
+    async approve(id, adminId) {
         const vendor = await this.vendorModel
             .findByIdAndUpdate(id, {
             verified: true,
@@ -146,7 +146,7 @@ let VendorsService = class VendorsService {
         }
         return vendor;
     }
-    async reject(id, reason) {
+    async reject(id, adminId, reason) {
         const vendor = await this.vendorModel
             .findByIdAndUpdate(id, {
             verified: false,
@@ -161,7 +161,7 @@ let VendorsService = class VendorsService {
         }
         return vendor;
     }
-    async suspend(id, reason) {
+    async suspend(id, adminId, reason) {
         const vendor = await this.vendorModel
             .findByIdAndUpdate(id, {
             verified: false,
@@ -173,7 +173,7 @@ let VendorsService = class VendorsService {
         }
         return vendor;
     }
-    async reactivate(id) {
+    async reactivate(id, adminId) {
         const vendor = await this.vendorModel
             .findByIdAndUpdate(id, {
             verified: true,

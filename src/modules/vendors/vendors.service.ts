@@ -128,7 +128,7 @@ export class VendorsService {
     return updatedVendor;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, adminId?: string): Promise<void> {
     const result = await this.vendorModel.findByIdAndDelete(id).exec();
     if (!result) {
       throw new NotFoundException('Vendor not found');
@@ -149,7 +149,7 @@ export class VendorsService {
       .exec();
   }
 
-  async approve(id: string): Promise<VendorDocument> {
+  async approve(id: string, adminId?: string): Promise<VendorDocument> {
     const vendor = await this.vendorModel
       .findByIdAndUpdate(
         id,
@@ -169,7 +169,7 @@ export class VendorsService {
     return vendor;
   }
 
-  async reject(id: string, reason?: string): Promise<VendorDocument> {
+  async reject(id: string, adminId?: string, reason?: string): Promise<VendorDocument> {
     const vendor = await this.vendorModel
       .findByIdAndUpdate(
         id,
@@ -190,7 +190,7 @@ export class VendorsService {
     return vendor;
   }
 
-  async suspend(id: string, reason?: string): Promise<VendorDocument> {
+  async suspend(id: string, adminId?: string, reason?: string): Promise<VendorDocument> {
     const vendor = await this.vendorModel
       .findByIdAndUpdate(
         id,
@@ -209,7 +209,7 @@ export class VendorsService {
     return vendor;
   }
 
-  async reactivate(id: string): Promise<VendorDocument> {
+  async reactivate(id: string, adminId?: string): Promise<VendorDocument> {
     const vendor = await this.vendorModel
       .findByIdAndUpdate(
         id,

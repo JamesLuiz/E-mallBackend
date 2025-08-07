@@ -14,8 +14,8 @@ export class CreateUserDto {
 
   @ApiProperty({ enum: UserRole, default: UserRole.CUSTOMER })
   @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
+  @IsEnum(UserRole, { each: true })
+  roles?: UserRole[];
 
   @ApiProperty({ required: false })
   @IsOptional()
