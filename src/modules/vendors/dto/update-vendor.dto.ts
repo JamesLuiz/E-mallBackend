@@ -2,33 +2,26 @@ import { IsOptional, IsString, IsBoolean, ValidateNested } from 'class-validator
 import { Type } from 'class-transformer';
 
 export class StoreSettingsDto {
-  @IsOptional()
   @IsString()
-  logo?: string;
+  logo: string;
 
-  @IsOptional()
   @IsString()
-  logoUri?: string;
+  logoUri: string;
 
-  @IsOptional()
   @IsString()
-  logoHash?: string;
+  logoHash: string;
 
-  @IsOptional()
   @IsString()
-  banner?: string;
+  banner: string;
 
-  @IsOptional()
   @IsString()
-  bannerUri?: string;
+  bannerUri: string;
 
-  @IsOptional()
   @IsString()
-  bannerHash?: string;
+  bannerHash: string;
 
-  @IsOptional()
   @IsString()
-  primaryColor?: string;
+  primaryColor: string;
 
   @IsOptional()
   @IsString()
@@ -39,6 +32,9 @@ export class StoreSettingsDto {
 }
 
 export class UpdateVendorDto {
+  @IsString()
+  logo: string;
+
   @IsOptional()
   @IsString()
   businessName?: string;

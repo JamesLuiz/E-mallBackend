@@ -1,32 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Analytics, AnalyticsDocument } from './schemas/analytics.schema';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(
-    @InjectModel(Analytics.name) private analyticsModel: Model<AnalyticsDocument>,
-  ) {}
-
   async getDashboard(query: AnalyticsQueryDto) {
-    // Placeholder: implement aggregation logic as needed
-    return { message: 'Dashboard analytics', query };
+    // TODO: Implement real dashboard analytics logic
+    return {
+      totalUsers: 1000,
+      totalOrders: 500,
+      totalRevenue: 100000,
+      topVendors: [],
+      topProducts: [],
+    };
   }
 
   async getSales(query: AnalyticsQueryDto) {
-    // Placeholder: implement aggregation logic as needed
-    return { message: 'Sales analytics', query };
+    // TODO: Implement real sales analytics logic
+    return {
+      sales: [],
+      total: 10000,
+      period: query.startDate + ' - ' + query.endDate,
+    };
   }
 
   async getProducts(query: AnalyticsQueryDto) {
-    // Placeholder: implement aggregation logic as needed
-    return { message: 'Products analytics', query };
+    // TODO: Implement real product analytics logic
+    return {
+      products: [],
+      topCategories: [],
+    };
   }
 
   async getCustomers(query: AnalyticsQueryDto) {
-    // Placeholder: implement aggregation logic as needed
-    return { message: 'Customers analytics', query };
+    // TODO: Implement real customer analytics logic
+    return {
+      customers: [],
+      newCustomers: 50,
+    };
   }
 }

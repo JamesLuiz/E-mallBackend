@@ -1,35 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { v2 as cloudinary } from 'cloudinary';
-import { Readable } from 'stream';
+import { PinataService } from './pinata.service';
 
 @Injectable()
 export class UploadsService {
-  async uploadImage(file: Express.Multer.File, folder: string = 'general'): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: `abuja-mall/${folder}`,
-          resource_type: 'image',
-          transformation: [
-            { width: 1200, height: 1200, crop: 'limit' },
-            { quality: 'auto' },
-            { fetch_format: 'auto' },
-          ],
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result.secure_url);
-        },
-      );
-      Readable.from(file.buffer).pipe(uploadStream);
-    });
+  constructor(private readonly pinataService: PinataService) {}
+
+  async uploadImage(file: Express.Multer.File, folder: string = 'general'): Promise<{ uri: string; hash: string }> {
+    // Upload to Pinata
+    return this.pinataService.uploadFile(file);
   }
 
-  async uploadMultipleImages(files: Express.Multer.File[], folder: string = 'general'): Promise<string[]> {
+  async uploadMultipleImages(files: Express.Multer.File[], folder: string = 'general'): Promise<{ uri: string; hash: string }[]> {
     return Promise.all(files.map(file => this.uploadImage(file, folder)));
   }
 
   async deleteImage(publicId: string): Promise<void> {
-    await cloudinary.uploader.destroy(publicId);
+    // Pinata does not support deleting files via public gateway, so this is a no-op or you can implement unpinning if needed
   }
 }

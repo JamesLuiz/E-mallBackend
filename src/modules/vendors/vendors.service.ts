@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Vendor, VendorDocument, VendorKycDocuments } from './schemas/vendor.schema';
@@ -7,11 +7,13 @@ import { VendorCompanyDto } from './dto/vendor-company.dto';
 import { VendorKycDto } from './dto/vendor-kyc.dto';
 import { VendorQueryDto } from './dto/vendor-query.dto';
 import { FileUploadResult } from '../../common/services/pinata.service';
+import { PinataService } from '../uploads/pinata.service';
 
 @Injectable()
 export class VendorsService {
   constructor(
     @InjectModel(Vendor.name) private vendorModel: Model<VendorDocument>,
+    @Inject(forwardRef(() => PinataService)) private pinataService: PinataService,
   ) {}
 
   async create(userId: string, businessName: string): Promise<VendorDocument> {
@@ -474,5 +476,30 @@ export class VendorsService {
       .find({ 'kycDocuments.verificationStatus': status })
       .populate('userId', 'email profile')
       .exec();
+  }
+
+  async uploadLogo(userId: string, file: Express.Multer.File) {
+    const vendor = await this.findByUserId(userId);
+    const { uri, hash } = await this.pinataService.uploadFile(file);
+    vendor.storeSettings.logo = uri;
+    vendor.storeSettings.logoUri = uri;
+    vendor.storeSettings.logoHash = hash;
+    await vendor.save();
+    return vendor;
+  }
+
+  async uploadKycDocument(userId: string, file: Express.Multer.File, type: string) {
+    const vendor = await this.findByUserId(userId);
+    const { uri, hash } = await this.pinataService.uploadFile(file);
+    if (!vendor.kycDocuments) vendor.kycDocuments = {} as any;
+    if (type === 'identity') {
+      vendor.kycDocuments.identityDocumentUri = uri;
+      vendor.kycDocuments.identityDocumentHash = hash;
+    } else if (type === 'businessCertificate') {
+      vendor.kycDocuments.businessCertificateUri = uri;
+      vendor.kycDocuments.businessCertificateHash = hash;
+    }
+    await vendor.save();
+    return vendor;
   }
 }

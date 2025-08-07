@@ -29,6 +29,7 @@ import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { VendorResponseDto } from './dto/vendor-response.dto';
 import { VendorQueryDto } from './dto/vendor-query.dto';
+import { Vendor } from './schemas/vendor.schema';
 
 @ApiTags('Vendors')
 @ApiBearerAuth()
@@ -106,7 +107,7 @@ export class VendorsController {
     @CurrentUser('_id') userId: string,
     @Body() updateVendorDto: UpdateVendorDto,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorsService.updateByUserId(userId, updateVendorDto);
+    const vendor = await this.vendorsService.updateByUserId(userId, updateVendorDto as unknown as Partial<Vendor>);
     return plainToInstance(VendorResponseDto, vendor.toObject());
   }
 

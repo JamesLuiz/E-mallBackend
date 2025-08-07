@@ -9,15 +9,15 @@ export class UploadsController {
   @Post('image')
   @UseInterceptors(FileInterceptor('image'))
   async uploadImage(@UploadedFile() file: Express.Multer.File, @Body('folder') folder?: string) {
-    const url = await this.uploadsService.uploadImage(file, folder);
-    return { url };
+    const result = await this.uploadsService.uploadImage(file, folder);
+    return { uri: result.uri, hash: result.hash };
   }
 
   @Post('multiple')
   @UseInterceptors(FilesInterceptor('images'))
   async uploadMultiple(@UploadedFiles() files: Express.Multer.File[], @Body('folder') folder?: string) {
-    const urls = await this.uploadsService.uploadMultipleImages(files, folder);
-    return { urls };
+    const results = await this.uploadsService.uploadMultipleImages(files, folder);
+    return { files: results };
   }
 
   @Delete(':filename')

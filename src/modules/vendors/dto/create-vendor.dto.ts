@@ -3,20 +3,33 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 class StoreSettingsDto {
-  @ApiProperty({ required: false })
-  @IsOptional()
+  @ApiProperty({ required: true })
   @IsString()
-  logo?: string;
+  logo: string;
 
-  @ApiProperty({ required: false })
-  @IsOptional()
+  @ApiProperty({ required: true })
   @IsString()
-  banner?: string;
+  logoUri: string;
 
-  @ApiProperty({ required: false })
-  @IsOptional()
+  @ApiProperty({ required: true })
   @IsString()
-  primaryColor?: string;
+  logoHash: string;
+
+  @ApiProperty({ required: true })
+  @IsString()
+  banner: string;
+
+  @ApiProperty({ required: true })
+  @IsString()
+  bannerUri: string;
+
+  @ApiProperty({ required: true })
+  @IsString()
+  bannerHash: string;
+
+  @ApiProperty({ required: true })
+  @IsString()
+  primaryColor: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
