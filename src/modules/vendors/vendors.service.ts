@@ -24,7 +24,11 @@ export class VendorsService {
       userId,
       businessName,
     });
-    return vendor.save();
+    const savedVendor = await vendor.save();
+    return this.vendorModel
+      .findById(savedVendor._id)
+      .populate('userId', 'email profile')
+      .exec();
   }
 
   async findAll(query?: VendorQueryDto): Promise<VendorDocument[]> {
