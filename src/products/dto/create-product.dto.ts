@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsArray, IsOptional, IsBoolean, ValidateNested, Min } from 'class-validator';
+import { IsString, IsNumber, IsArray, IsOptional, IsBoolean, ValidateNested, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -79,4 +79,14 @@ export class CreateProductDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  featured?: boolean;
+
+  @ApiProperty({ required: false, enum: ['draft', 'active', 'inactive', 'out_of_stock'], default: 'active' })
+  @IsOptional()
+  @IsEnum(['draft', 'active', 'inactive', 'out_of_stock'])
+  status?: string;
 }
