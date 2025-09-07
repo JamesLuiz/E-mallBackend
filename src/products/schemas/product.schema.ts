@@ -15,16 +15,16 @@ export class Inventory {
 @Schema()
 export class ProductImage {
   @Prop({ required: true })
-  uri: string; // Pinata IPFS URI
+  uri: string;
 
   @Prop({ required: true })
-  hash: string; // IPFS hash for deletion
+  hash: string;
 
   @Prop()
   originalName: string;
 
   @Prop({ default: false })
-  isPrimary: boolean; // Mark primary product image
+  isPrimary: boolean;
 
   @Prop({ default: Date.now })
   uploadedAt: Date;
@@ -53,11 +53,9 @@ export class Product {
   @Prop({ default: 0 })
   discount: number;
 
-  // Legacy field - keep for backward compatibility
   @Prop({ type: [String], default: [] })
   images: string[];
 
-  // New structured image field with Pinata URIs
   @Prop({ type: [ProductImage], default: [] })
   imageUris: ProductImage[];
 
@@ -80,10 +78,22 @@ export class Product {
   tags: string[];
 
   @Prop({ default: 0 })
-  ratings: number;
+  rating: number;
 
   @Prop({ default: 0 })
   reviewCount: number;
+
+  @Prop({ default: 0 })
+  views: number;
+
+  @Prop({ default: 0 })
+  sales: number;
+
+  @Prop({ default: false })
+  featured: boolean;
+
+  @Prop({ enum: ['draft', 'active', 'inactive', 'out_of_stock'], default: 'active' })
+  status: string;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
