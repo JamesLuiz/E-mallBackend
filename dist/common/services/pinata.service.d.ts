@@ -22,5 +22,5 @@ export declare class PinataService {
     private validateFile;
     private getValidationRules;
     deleteFile(cid: string): Promise<boolean>;
-    getFileInfo(cid: string): Promise<import("pinata").FileListItem>;
+    getFileInfo(cid: string): Promise<any>;
 }
