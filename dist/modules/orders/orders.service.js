@@ -11,6 +11,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+<<<<<<< HEAD
+=======
+var _a;
+>>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersService = void 0;
 const common_1 = require("@nestjs/common");
@@ -215,8 +219,12 @@ exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(order_schema_1.Order.name)),
+<<<<<<< HEAD
     __metadata("design:paramtypes", [mongoose_2.Model,
         products_service_1.ProductsService,
         vendors_service_1.VendorsService])
+=======
+    __metadata("design:paramtypes", [mongoose_2.Model, typeof (_a = typeof products_service_1.ProductsService !== "undefined" && products_service_1.ProductsService) === "function" ? _a : Object, vendors_service_1.VendorsService])
+>>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

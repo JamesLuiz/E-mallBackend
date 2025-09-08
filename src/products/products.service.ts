@@ -7,13 +7,14 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
 import { VendorsService } from '../vendors/vendors.service';
 import { PinataService } from '../uploads/pinata.service';
+import { VendorsService as ModuleVendorsService } from '../modules/vendors/vendors.service';
 import { FileUploadResult } from '../../common/services/pinata.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
-    private vendorsService: VendorsService,
+    private vendorsService: ModuleVendorsService,
     private pinataService: PinataService,
   ) {}
 

@@ -20,14 +20,21 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { ProductsService } from './products.service';
+import { VendorsService } from '../modules/vendors/vendors.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
+import { VendorFilterDto } from './dto/vendor-filter.dto';
+import { VendorKycUpdateDto } from './dto/vendor-kyc-update.dto';
+import { VendorRatingUpdateDto } from './dto/vendor-rating-update.dto';
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly vendorsService: VendorsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all products with filtering and pagination' })
@@ -295,5 +302,181 @@ export class ProductsController {
     @CurrentUser('_id') userId: string,
   ) {
     return this.productsService.removeProductImage(id, userId, imageHash);
+  }
+
+  // Vendor Management Endpoints
+  @Get('vendors')
+  @ApiOperation({ summary: 'Get all vendors' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search vendors by name' })
+  @ApiQuery({ name: 'verified', required: false, description: 'Filter by verification status' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  getVendors(@Query() query: VendorFilterDto) {
+    return this.vendorsService.findAll(query);
+  }
+
+  @Get('vendors/:vendorId/profile')
+  @ApiOperation({ summary: 'Get vendor profile by ID' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  getVendorProfile(@Param('vendorId') vendorId: string) {
+    return this.vendorsService.findOne(vendorId);
+  }
+
+  @Get('vendors/:vendorId/products')
+  @ApiOperation({ summary: 'Get products by specific vendor' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  getVendorProductsById(@Param('vendorId') vendorId: string, @Query() filter: ProductFilterDto) {
+    return this.productsService.findByVendor(vendorId, filter);
+  }
+
+  @Get('vendors/:vendorId/analytics')
+  @ApiOperation({ summary: 'Get vendor analytics' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  @ApiQuery({ name: 'period', required: false, description: 'Analytics period' })
+  getVendorAnalytics(@Param('vendorId') vendorId: string, @Query('period') period?: string) {
+    return this.vendorsService.getAnalytics(vendorId, period);
+  }
+
+  @Get('vendors/verified')
+  @ApiOperation({ summary: 'Get all verified vendors' })
+  getVerifiedVendors() {
+    return this.vendorsService.getVerified();
+  }
+
+  @Get('vendors/top-rated')
+  @ApiOperation({ summary: 'Get top rated vendors' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of vendors to return' })
+  getTopRatedVendors(@Query('limit') limit?: number) {
+    return this.vendorsService.getTopRated(limit);
+  }
+
+  // Admin Vendor Management Endpoints
+  @Get('vendors/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get pending vendor verifications (Admin only)' })
+  getPendingVendors() {
+    return this.vendorsService.findPendingVendors();
+  }
+
+  @Put('vendors/:vendorId/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Approve vendor (Admin only)' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  approveVendor(@Param('vendorId') vendorId: string, @CurrentUser('_id') adminId: string) {
+    return this.vendorsService.approve(vendorId, adminId);
+  }
+
+  @Put('vendors/:vendorId/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reject vendor (Admin only)' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  rejectVendor(
+    @Param('vendorId') vendorId: string,
+    @CurrentUser('_id') adminId: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.vendorsService.reject(vendorId, adminId, reason);
+  }
+
+  @Put('vendors/:vendorId/suspend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Suspend vendor (Admin only)' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  suspendVendor(
+    @Param('vendorId') vendorId: string,
+    @CurrentUser('_id') adminId: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.vendorsService.suspend(vendorId, adminId, reason);
+  }
+
+  @Put('vendors/:vendorId/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reactivate vendor (Admin only)' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  reactivateVendor(@Param('vendorId') vendorId: string, @CurrentUser('_id') adminId: string) {
+    return this.vendorsService.reactivate(vendorId, adminId);
+  }
+
+  // Vendor KYC Management Endpoints
+  @Get('vendors/:vendorId/kyc-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VENDOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get vendor KYC status' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  getVendorKycStatus(@Param('vendorId') vendorId: string) {
+    return this.vendorsService.getVendorKycStatus(vendorId);
+  }
+
+  @Put('vendors/:vendorId/kyc-verification')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update vendor KYC verification status (Admin only)' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  updateVendorKycStatus(
+    @Param('vendorId') vendorId: string,
+    @Body() body: VendorKycUpdateDto,
+    @CurrentUser('_id') adminId: string,
+  ) {
+    return this.vendorsService.updateVendorKycVerificationStatus(vendorId, body.status, body.notes, adminId);
+  }
+
+  @Get('vendors/kyc/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get vendors with pending KYC verification (Admin only)' })
+  getPendingKycVerifications() {
+    return this.vendorsService.getPendingKycVerifications();
+  }
+
+  @Get('vendors/kyc/:status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get vendors by KYC verification status (Admin only)' })
+  @ApiParam({ name: 'status', description: 'Verification status', enum: ['pending', 'approved', 'rejected'] })
+  getVendorsByKycStatus(@Param('status') status: 'pending' | 'approved' | 'rejected') {
+    return this.vendorsService.getVendorsByVerificationStatus(status);
+  }
+
+  // Vendor Rating and Performance
+  @Put('vendors/:vendorId/rating')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update vendor rating (Admin only)' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  updateVendorRating(
+    @Param('vendorId') vendorId: string,
+    @Body() body: VendorRatingUpdateDto,
+  ) {
+    return this.vendorsService.updateRating(vendorId, body.rating);
+  }
+
+  // Vendor Dashboard Data
+  @Get('vendors/:vendorId/dashboard')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.VENDOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get vendor dashboard data' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  getVendorDashboard(@Param('vendorId') vendorId: string) {
+    return this.vendorsService.getDashboardData(vendorId);
   }
 }
