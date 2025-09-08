@@ -2,16 +2,21 @@ import { Injectable, UnauthorizedException, NotFoundException, BadRequestExcepti
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { VendorsService } from '../vendors/vendors.service';
 import { UserDocument } from '../users/schemas/user.schema';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { RegisterCustomerDto } from './dto/register-customer.dto';
+import { RegisterVendorDto } from '../vendors/dto/register-vendor.dto';
+import { UserRole } from '../../common/enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private vendorsService: VendorsService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -51,6 +56,41 @@ export class AuthService {
     const user = await this.usersService.create(createUserDto);
     const { password, ...result } = (user as any).toObject();
     return result;
+  }
+
+  async registerCustomer(dto: RegisterCustomerDto): Promise<any> {
+    const user = await this.usersService.create({
+      email: dto.email,
+      password: dto.password,
+      roles: [UserRole.CUSTOMER],
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      phone: dto.phoneNumber,
+    } as any);
+    const { password, ...result } = (user as any).toObject();
+    return result;
+  }
+
+  async registerVendor(dto: RegisterVendorDto): Promise<any> {
+    const user = await this.usersService.create({
+      email: dto.email,
+      password: dto.password,
+      roles: [UserRole.VENDOR],
+      firstName: dto.fullName?.split(' ')[0],
+      lastName: dto.fullName?.split(' ').slice(1).join(' '),
+      phone: dto.businessPhoneNumber,
+    } as any);
+
+    const vendor = await this.vendorsService.create(user._id.toString(), dto.businessName);
+    await this.vendorsService.updateByUserId(user._id.toString(), {
+      contactFullName: dto.fullName,
+      businessPhoneNumber: dto.businessPhoneNumber,
+      businessAddress: dto.businessAddress,
+      businessCategory: dto.businessCategory,
+    } as any);
+
+    const { password, ...userResult } = (user as any).toObject();
+    return { user: userResult, vendor };
   }
 
   async refreshToken(token: string) {

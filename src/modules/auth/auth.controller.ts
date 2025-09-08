@@ -21,6 +21,8 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RegisterCustomerDto } from './dto/register-customer.dto';
+import { RegisterVendorDto } from '../vendors/dto/register-vendor.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -31,6 +33,18 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new user' })
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('register/customer')
+  @ApiOperation({ summary: 'Register a new customer' })
+  registerCustomer(@Body() dto: RegisterCustomerDto) {
+    return this.authService.registerCustomer(dto);
+  }
+
+  @Post('register/vendor')
+  @ApiOperation({ summary: 'Register a new vendor' })
+  registerVendor(@Body() dto: RegisterVendorDto) {
+    return this.authService.registerVendor(dto);
   }
 
   @Post('login')
