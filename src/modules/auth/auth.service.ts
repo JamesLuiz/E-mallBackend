@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { RegisterCustomerDto } from './dto/register-customer.dto';
 import { RegisterVendorDto } from '../vendors/dto/register-vendor.dto';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { GoogleAuthDto } from './dto/google-auth.dto';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +20,8 @@ export class AuthService {
     private jwtService: JwtService,
     private vendorsService: VendorsService,
   ) {}
+
+  private googleClient = new OAuth2Client();
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
@@ -91,6 +95,79 @@ export class AuthService {
 
     const { password, ...userResult } = (user as any).toObject();
     return { user: userResult, vendor };
+  }
+
+  private async verifyGoogleIdToken(idToken: string): Promise<{ email: string; given_name?: string; family_name?: string; name?: string } | null> {
+    const ticket = await this.googleClient.verifyIdToken({ idToken, audience: undefined });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) return null;
+    return {
+      email: payload.email,
+      given_name: payload.given_name,
+      family_name: payload.family_name,
+      name: payload.name,
+    } as any;
+  }
+
+  async googleSignInCustomer(dto: GoogleAuthDto) {
+    const profile = await this.verifyGoogleIdToken(dto.idToken);
+    if (!profile) throw new UnauthorizedException('Invalid Google token');
+
+    let user = await this.usersService.findByEmail(profile.email);
+    if (!user) {
+      user = await this.usersService.create({
+        email: profile.email,
+        password: uuidv4(),
+        roles: [UserRole.CUSTOMER],
+        firstName: profile.given_name || profile.name?.split(' ')[0],
+        lastName: profile.family_name || profile.name?.split(' ').slice(1).join(' '),
+      } as any);
+    }
+
+    const payload = { email: user.email, sub: user._id, role: user.roles };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    await this.usersService.updateRefreshToken(user._id.toString(), refreshToken);
+    const { password, ...result } = (user as any).toObject();
+    return { access_token: accessToken, refresh_token: refreshToken, user: result };
+  }
+
+  async googleSignInVendor(dto: GoogleAuthDto, vendorDetails: { businessName: string; businessPhoneNumber?: string; businessAddress?: string; businessCategory?: string; fullName?: string }) {
+    const profile = await this.verifyGoogleIdToken(dto.idToken);
+    if (!profile) throw new UnauthorizedException('Invalid Google token');
+
+    let user = await this.usersService.findByEmail(profile.email);
+    if (!user) {
+      user = await this.usersService.create({
+        email: profile.email,
+        password: uuidv4(),
+        roles: [UserRole.VENDOR],
+        firstName: profile.given_name || vendorDetails.fullName?.split(' ')[0] || profile.name?.split(' ')[0],
+        lastName: profile.family_name || vendorDetails.fullName?.split(' ').slice(1).join(' ') || profile.name?.split(' ').slice(1).join(' '),
+        phone: vendorDetails.businessPhoneNumber,
+      } as any);
+    }
+
+    // Ensure vendor record exists/updated
+    let vendorRecord: any;
+    try {
+      vendorRecord = await this.vendorsService.findByUserId(user._id.toString());
+    } catch (e) {
+      vendorRecord = await this.vendorsService.create(user._id.toString(), vendorDetails.businessName);
+    }
+    await this.vendorsService.updateByUserId(user._id.toString(), {
+      contactFullName: vendorDetails.fullName || profile.name,
+      businessPhoneNumber: vendorDetails.businessPhoneNumber,
+      businessAddress: vendorDetails.businessAddress,
+      businessCategory: vendorDetails.businessCategory,
+    } as any);
+
+    const payload = { email: user.email, sub: user._id, role: user.roles };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    await this.usersService.updateRefreshToken(user._id.toString(), refreshToken);
+    const { password, ...result } = (user as any).toObject();
+    return { access_token: accessToken, refresh_token: refreshToken, user: result, vendor: vendorRecord };
   }
 
   async refreshToken(token: string) {
