@@ -21,6 +21,9 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RegisterCustomerDto } from './dto/register-customer.dto';
+import { RegisterVendorDto } from '../vendors/dto/register-vendor.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -33,11 +36,40 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Post('register/customer')
+  @ApiOperation({ summary: 'Register a new customer' })
+  registerCustomer(@Body() dto: RegisterCustomerDto) {
+    return this.authService.registerCustomer(dto);
+  }
+
+  @Post('register/vendor')
+  @ApiOperation({ summary: 'Register a new vendor' })
+  registerVendor(@Body() dto: RegisterVendorDto) {
+    return this.authService.registerVendor(dto);
+  }
+
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('google/customer')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Google sign-in for customer (ID token)' })
+  googleCustomer(@Body() dto: GoogleAuthDto) {
+    return this.authService.googleSignInCustomer(dto);
+  }
+
+  @Post('google/vendor')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Google sign-in for vendor (ID token + vendor details)' })
+  googleVendor(
+    @Body() body: GoogleAuthDto & { businessName: string; businessPhoneNumber?: string; businessAddress?: string; businessCategory?: string; fullName?: string }
+  ) {
+    const { idToken, ...vendorDetails } = body;
+    return this.authService.googleSignInVendor({ idToken }, vendorDetails);
   }
 
   @Post('refresh-token')

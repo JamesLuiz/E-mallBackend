@@ -107,10 +107,19 @@ export class Vendor {
   businessName: string;
 
   @Prop()
+  contactFullName: string;
+
+  @Prop()
+  businessPhoneNumber: string;
+
+  @Prop()
   businessDescription: string;
 
   @Prop()
   businessAddress: string;
+
+  @Prop({ enum: ['electronics', 'fashion_and_style', 'home_and_garden', 'beauty_and_health', 'sports_and_fitness', 'books_and_media'] })
+  businessCategory: string;
 
   @Prop({ type: StoreSettings })
   storeSettings: StoreSettings;
