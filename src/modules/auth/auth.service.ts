@@ -38,17 +38,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { email: user.email, sub: user._id, role: user.role };
+    const payload = { email: user.email, sub: (user as any)._id, role: (user as any).role };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-    await this.usersService.updateRefreshToken(user._id, refreshToken);
+    await this.usersService.updateRefreshToken((user as any)._id, refreshToken);
 
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
       user: {
-        id: user._id,
+        id: (user as any)._id,
         email: user.email,
         roles: user.roles,
         profile: user.profile,
@@ -63,7 +63,7 @@ export class AuthService {
   }
 
   async registerCustomer(dto: RegisterCustomerDto): Promise<any> {
-    const user = await this.usersService.create({
+    const user: any = await this.usersService.create({
       email: dto.email,
       password: dto.password,
       roles: [UserRole.CUSTOMER],
@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   async registerVendor(dto: RegisterVendorDto): Promise<any> {
-    const user = await this.usersService.create({
+    const user: any = await this.usersService.create({
       email: dto.email,
       password: dto.password,
       roles: [UserRole.VENDOR],
@@ -85,8 +85,8 @@ export class AuthService {
       phone: dto.businessPhoneNumber,
     } as any);
 
-    const vendor = await this.vendorsService.create(user._id.toString(), dto.businessName);
-    await this.vendorsService.updateByUserId(user._id.toString(), {
+    const vendor = await this.vendorsService.create((user as any)._id.toString(), dto.businessName);
+    await this.vendorsService.updateByUserId((user as any)._id.toString(), {
       contactFullName: dto.fullName,
       businessPhoneNumber: dto.businessPhoneNumber,
       businessAddress: dto.businessAddress,
@@ -113,7 +113,7 @@ export class AuthService {
     const profile = await this.verifyGoogleIdToken(dto.idToken);
     if (!profile) throw new UnauthorizedException('Invalid Google token');
 
-    let user = await this.usersService.findByEmail(profile.email);
+    let user: any = await this.usersService.findByEmail(profile.email);
     if (!user) {
       user = await this.usersService.create({
         email: profile.email,
@@ -136,7 +136,7 @@ export class AuthService {
     const profile = await this.verifyGoogleIdToken(dto.idToken);
     if (!profile) throw new UnauthorizedException('Invalid Google token');
 
-    let user = await this.usersService.findByEmail(profile.email);
+    let user: any = await this.usersService.findByEmail(profile.email);
     if (!user) {
       user = await this.usersService.create({
         email: profile.email,
