@@ -5,7 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
-import { ProductsModule } from './modules/products/products.module';
+import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
@@ -20,6 +20,7 @@ import { BlogModule } from './blog/blog.module';
 import { CareersModule } from './careers/careers.module';
 import { SupportModule } from './support/support.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { MinioModule } from './modules/minio/minio.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { UploadsModule } from './uploads/uploads.module';
     CareersModule,
     SupportModule,
     UploadsModule,
+    MinioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
