@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { UploadsController } from './uploads.controller';
 import { UploadsService } from './uploads.service';
-import { PinataService } from './pinata.service';
+import { MinioModule } from '../modules/minio/minio.module';
 
 @Module({
+  imports: [MinioModule],
   controllers: [UploadsController],
-  providers: [UploadsService, PinataService],
-  exports: [PinataService],
+  providers: [UploadsService],
+  exports: [],
 })
 export class UploadsModule {}

@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PinataService } from './pinata.service';
+import { MinioService } from '../modules/minio/minio.service';
 
 @Injectable()
 export class UploadsService {
-  constructor(private readonly pinataService: PinataService) {}
+  constructor(private readonly minioService: MinioService) {}
 
   async uploadImage(file: Express.Multer.File, folder: string = 'general'): Promise<{ uri: string; hash: string }> {
-    // Upload to Pinata
-    return this.pinataService.uploadFile(file);
+    return this.minioService.uploadFile(file, folder);
   }
 
   async uploadMultipleImages(files: Express.Multer.File[], folder: string = 'general'): Promise<{ uri: string; hash: string }[]> {
@@ -15,6 +14,6 @@ export class UploadsService {
   }
 
   async deleteImage(publicId: string): Promise<void> {
-    // Pinata does not support deleting files via public gateway, so this is a no-op or you can implement unpinning if needed
+    // Implement deletion with MinIO if needed
   }
 }

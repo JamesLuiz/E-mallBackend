@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { FileUploadController } from './file-upload.controller';
 import { FileUploadService } from './file-upload.service';
-import { PinataService } from '../../common/services/pinata.service';
+import { MinioModule } from '../minio/minio.module';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, MinioModule],
   controllers: [FileUploadController],
-  providers: [FileUploadService, PinataService],
-  exports: [FileUploadService, PinataService],
+  providers: [FileUploadService],
+  exports: [FileUploadService],
 })
 export class FileUploadModule {}
