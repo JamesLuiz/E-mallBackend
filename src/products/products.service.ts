@@ -6,16 +6,14 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
 import { VendorsService } from '../vendors/vendors.service';
-import { PinataService } from '../uploads/pinata.service';
-import { VendorsService as ModuleVendorsService } from '../modules/vendors/vendors.service';
-import { FileUploadResult } from '../../common/services/pinata.service';
+import { MinioService, MinioUploadResult } from '../modules/minio/minio.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
-    private vendorsService: ModuleVendorsService,
-    private pinataService: PinataService,
+    private vendorsService: VendorsService,
+    private minioService: MinioService,
   ) {}
 
   async create(userId: string, createProductDto: CreateProductDto): Promise<ProductDocument> {
@@ -173,8 +171,8 @@ export class ProductsService {
       throw new ForbiddenException('You can only update your own products');
     }
 
-    const imageResults = await Promise.all(files.map(file => this.pinataService.uploadFile(file)));
-    const imageUris = imageResults.map(r => r.uri);
+    const imageResults = await Promise.all(files.map(file => this.minioService.uploadFile(file, 'products')));
+    const imageUris = imageResults.map((r: MinioUploadResult) => r.uri);
     product.images = [...(product.images || []), ...imageUris];
     await product.save();
     return product;
@@ -183,7 +181,7 @@ export class ProductsService {
   async addProductImages(
     productId: string,
     userId: string,
-    uploadResults: FileUploadResult[]
+    uploadResults: MinioUploadResult[]
   ): Promise<ProductDocument> {
     const product = await this.findOne(productId);
     const vendor = await this.vendorsService.findByUserId(userId);
