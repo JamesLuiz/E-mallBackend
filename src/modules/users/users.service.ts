@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument, KycDocuments } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { FileUploadResult } from '../../common/services/pinata.service';
+import { MinioService, MinioUploadResult } from '../minio/minio.service';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { PinataService } from '../uploads/pinata.service';
 
@@ -13,7 +13,7 @@ import { PinataService } from '../uploads/pinata.service';
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @Inject(forwardRef(() => PinataService)) private pinataService: PinataService,
+    private minioService: MinioService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -72,7 +72,7 @@ export class UsersService {
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File): Promise<User> {
-    const { uri } = await this.pinataService.uploadFile(file);
+    const { uri } = await this.minioService.uploadFile(file, 'avatars');
     const updatedUser = await this.userModel
       .findByIdAndUpdate(userId, { avatar: uri }, { new: true })
       .select('-password')
@@ -84,7 +84,7 @@ export class UsersService {
   }
 
   // New method for Pinata profile picture upload
-  async updateProfilePicture(userId: string, uploadResult: FileUploadResult): Promise<User> {
+  async updateProfilePicture(userId: string, uploadResult: MinioUploadResult): Promise<User> {
     const updatedUser = await this.userModel
       .findByIdAndUpdate(
         userId,
@@ -110,7 +110,7 @@ export class UsersService {
   async uploadKycDocuments(
     userId: string,
     documentType: 'identity' | 'proofOfAddress',
-    uploadResult: FileUploadResult
+    uploadResult: MinioUploadResult
   ): Promise<User> {
     const updateData: any = {
       'kycDocuments.submittedAt': new Date(),

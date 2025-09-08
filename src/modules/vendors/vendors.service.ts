@@ -6,14 +6,13 @@ import { VendorBioDto } from './dto/vendor-bio.dto';
 import { VendorCompanyDto } from './dto/vendor-company.dto';
 import { VendorKycDto } from './dto/vendor-kyc.dto';
 import { VendorQueryDto } from './dto/vendor-query.dto';
-import { FileUploadResult } from '../../common/services/pinata.service';
-import { PinataService } from '../uploads/pinata.service';
+import { MinioService, MinioUploadResult } from '../minio/minio.service';
 
 @Injectable()
 export class VendorsService {
   constructor(
     @InjectModel(Vendor.name) private vendorModel: Model<VendorDocument>,
-    @Inject(forwardRef(() => PinataService)) private pinataService: PinataService,
+    private minioService: MinioService,
   ) {}
 
   async create(userId: string, businessName: string): Promise<VendorDocument> {
@@ -331,7 +330,7 @@ export class VendorsService {
 
   // New methods for Pinata integration
 
-  async updateVendorLogo(userId: string, uploadResult: FileUploadResult): Promise<VendorDocument> {
+  async updateVendorLogo(userId: string, uploadResult: MinioUploadResult): Promise<VendorDocument> {
     const vendor = await this.vendorModel.findOneAndUpdate(
       { userId },
       {
@@ -350,7 +349,7 @@ export class VendorsService {
     return vendor;
   }
 
-  async updateVendorBanner(userId: string, uploadResult: FileUploadResult): Promise<VendorDocument> {
+  async updateVendorBanner(userId: string, uploadResult: MinioUploadResult): Promise<VendorDocument> {
     const vendor = await this.vendorModel.findOneAndUpdate(
       { userId },
       {
@@ -372,7 +371,7 @@ export class VendorsService {
   async uploadVendorKycDocument(
     userId: string,
     documentType: 'identity' | 'businessCertificate' | 'taxCertificate' | 'bankStatement',
-    uploadResult: FileUploadResult
+    uploadResult: MinioUploadResult
   ): Promise<VendorDocument> {
     const updateData: any = {
       'kycDocuments.submittedAt': new Date(),
@@ -480,7 +479,7 @@ export class VendorsService {
 
   async uploadLogo(userId: string, file: Express.Multer.File) {
     const vendor = await this.findByUserId(userId);
-    const { uri, hash } = await this.pinataService.uploadFile(file);
+    const { uri, hash } = await this.minioService.uploadFile(file, 'vendors');
     vendor.storeSettings.logo = uri;
     vendor.storeSettings.logoUri = uri;
     vendor.storeSettings.logoHash = hash;
@@ -490,7 +489,7 @@ export class VendorsService {
 
   async uploadKycDocument(userId: string, file: Express.Multer.File, type: string) {
     const vendor = await this.findByUserId(userId);
-    const { uri, hash } = await this.pinataService.uploadFile(file);
+    const { uri, hash } = await this.minioService.uploadFile(file, 'vendors');
     if (!vendor.kycDocuments) vendor.kycDocuments = {} as any;
     if (type === 'identity') {
       vendor.kycDocuments.identityDocumentUri = uri;

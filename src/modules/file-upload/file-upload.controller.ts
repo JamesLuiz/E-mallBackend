@@ -13,7 +13,7 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FileUploadService } from './file-upload.service';
-import { FileType } from '../../common/services/pinata.service';
+// Pinata FileType removed; controller remains generic for MinIO
 import { GetUser } from '../auth/decorators/get-user.decorator';
 
 @ApiTags('File Upload')
