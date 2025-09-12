@@ -21,6 +21,7 @@ import { CareersModule } from './careers/careers.module';
 import { SupportModule } from './support/support.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { MinioModule } from './modules/minio/minio.module';
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { MinioModule } from './modules/minio/minio.module';
     SupportModule,
     UploadsModule,
     MinioModule,
+    AiAssistantModule,
   ],
   controllers: [AppController],
   providers: [AppService],
