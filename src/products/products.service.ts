@@ -5,7 +5,7 @@ import { Product, ProductDocument, ProductImage } from './schemas/product.schema
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
-import { VendorsService } from '../vendors/vendors.service';
+import { VendorsService } from '../modules/vendors/vendors.service';
 import { MinioService, MinioUploadResult } from '../modules/minio/minio.service';
 
 @Injectable()
