@@ -11,8 +11,16 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true,
     }));
+    const allowedOrigins = (process.env.FRONTEND_URL && process.env.FRONTEND_URL.split(',')) || ['http://localhost:3000', 'http://localhost:8080'];
     app.enableCors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: (origin, callback) => {
+            if (!origin)
+                return callback(null, true);
+            if (allowedOrigins.indexOf(origin) !== -1) {
+                return callback(null, true);
+            }
+            return callback(new Error('CORS policy: origin not allowed'), false);
+        },
         credentials: true,
     });
     app.setGlobalPrefix('api');

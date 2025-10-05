@@ -156,11 +156,23 @@ __decorate([
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
+], Vendor.prototype, "contactFullName", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Vendor.prototype, "businessPhoneNumber", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
 ], Vendor.prototype, "businessDescription", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], Vendor.prototype, "businessAddress", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ enum: ['electronics', 'fashion_and_style', 'home_and_garden', 'beauty_and_health', 'sports_and_fitness', 'books_and_media'] }),
+    __metadata("design:type", String)
+], Vendor.prototype, "businessCategory", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ type: StoreSettings }),
     __metadata("design:type", StoreSettings)

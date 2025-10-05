@@ -4,12 +4,11 @@ import { VendorBioDto } from './dto/vendor-bio.dto';
 import { VendorCompanyDto } from './dto/vendor-company.dto';
 import { VendorKycDto } from './dto/vendor-kyc.dto';
 import { VendorQueryDto } from './dto/vendor-query.dto';
-import { FileUploadResult } from '../../common/services/pinata.service';
-import { PinataService } from '../uploads/pinata.service';
+import { MinioService, MinioUploadResult } from '../minio/minio.service';
 export declare class VendorsService {
     private vendorModel;
-    private pinataService;
-    constructor(vendorModel: Model<VendorDocument>, pinataService: PinataService);
+    private minioService;
+    constructor(vendorModel: Model<VendorDocument>, minioService: MinioService);
     create(userId: string, businessName: string): Promise<VendorDocument>;
     findAll(query?: VendorQueryDto): Promise<VendorDocument[]>;
     findOne(id: string): Promise<VendorDocument>;
@@ -69,9 +68,9 @@ export declare class VendorsService {
     kycDocuments(userId: string, files: Array<Express.Multer.File>, kycDto: VendorKycDto): Promise<import("mongoose").Document<unknown, {}, VendorDocument> & Vendor & import("mongoose").Document<any, any, any> & {
         _id: import("mongoose").Types.ObjectId;
     }>;
-    updateVendorLogo(userId: string, uploadResult: FileUploadResult): Promise<VendorDocument>;
-    updateVendorBanner(userId: string, uploadResult: FileUploadResult): Promise<VendorDocument>;
-    uploadVendorKycDocument(userId: string, documentType: 'identity' | 'businessCertificate' | 'taxCertificate' | 'bankStatement', uploadResult: FileUploadResult): Promise<VendorDocument>;
+    updateVendorLogo(userId: string, uploadResult: MinioUploadResult): Promise<VendorDocument>;
+    updateVendorBanner(userId: string, uploadResult: MinioUploadResult): Promise<VendorDocument>;
+    uploadVendorKycDocument(userId: string, documentType: 'identity' | 'businessCertificate' | 'taxCertificate' | 'bankStatement', uploadResult: MinioUploadResult): Promise<VendorDocument>;
     updateVendorKycDocumentType(userId: string, documentType: string): Promise<VendorDocument>;
     updateVendorKycVerificationStatus(userId: string, status: 'pending' | 'approved' | 'rejected', notes?: string, verifiedBy?: string): Promise<VendorDocument>;
     getVendorKycStatus(userId: string): Promise<VendorKycDocuments | null>;

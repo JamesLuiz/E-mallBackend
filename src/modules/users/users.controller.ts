@@ -11,6 +11,7 @@ import {
   Post,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -22,6 +23,7 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { FollowUserDto } from './dto/follow-user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -84,5 +86,63 @@ export class UsersController {
   @ApiOperation({ summary: 'Deactivate user (Admin only)' })
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  // Follow system endpoints
+  @Post('follow')
+  @ApiOperation({ summary: 'Follow a user' })
+  async followUser(
+    @CurrentUser('_id') userId: string,
+    @Body() followDto: FollowUserDto
+  ) {
+    return this.usersService.followUser(userId, followDto);
+  }
+
+  @Delete('follow/:followingId')
+  @ApiOperation({ summary: 'Unfollow a user' })
+  async unfollowUser(
+    @CurrentUser('_id') userId: string,
+    @Param('followingId') followingId: string
+  ) {
+    return this.usersService.unfollowUser(userId, followingId);
+  }
+
+  @Get('followers/:userId')
+  @ApiOperation({ summary: 'Get user followers' })
+  async getFollowers(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20
+  ) {
+    return this.usersService.getFollowers(userId, page, limit);
+  }
+
+  @Get('following/:userId')
+  @ApiOperation({ summary: 'Get users that a user is following' })
+  async getFollowing(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20
+  ) {
+    return this.usersService.getFollowing(userId, page, limit);
+  }
+
+  @Get('suggestions')
+  @ApiOperation({ summary: 'Get follow suggestions for current user' })
+  async getFollowSuggestions(
+    @CurrentUser('_id') userId: string,
+    @Query('limit') limit: number = 10
+  ) {
+    return this.usersService.getFollowSuggestions(userId, limit);
+  }
+
+  @Get('is-following/:userId')
+  @ApiOperation({ summary: 'Check if current user is following another user' })
+  async isFollowing(
+    @CurrentUser('_id') followerId: string,
+    @Param('userId') followingId: string
+  ) {
+    const isFollowing = await this.usersService.isFollowing(followerId, followingId);
+    return { isFollowing };
   }
 }

@@ -11,11 +11,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResendVerificationDto = void 0;
 const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
 class ResendVerificationDto {
 }
 exports.ResendVerificationDto = ResendVerificationDto;
 __decorate([
-    (0, class_validator_1.IsEmail)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'User email address',
+        example: 'user@example.com'
+    }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
     __metadata("design:type", String)
 ], ResendVerificationDto.prototype, "email", void 0);
 //# sourceMappingURL=resend-verification.dto.js.map

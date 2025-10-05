@@ -15,9 +15,17 @@ async function bootstrap() {
     }),
   );
 
-  // Enable CORS
+  // Enable CORS - allow FRONTEND_URL or localhost:8080 during development
+  const allowedOrigins = (process.env.FRONTEND_URL && process.env.FRONTEND_URL.split(',')) || ['http://localhost:3000', 'http://localhost:8080'];
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // allow requests with no origin (like curl, Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS policy: origin not allowed'), false);
+    },
     credentials: true,
   });
 

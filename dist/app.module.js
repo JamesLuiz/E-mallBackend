@@ -14,7 +14,7 @@ const throttler_1 = require("@nestjs/throttler");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const vendors_module_1 = require("./modules/vendors/vendors.module");
-const products_module_1 = require("./modules/products/products.module");
+const products_module_1 = require("./products/products.module");
 const orders_module_1 = require("./modules/orders/orders.module");
 const payments_module_1 = require("./modules/payments/payments.module");
 const delivery_module_1 = require("./modules/delivery/delivery.module");
@@ -29,6 +29,8 @@ const blog_module_1 = require("./blog/blog.module");
 const careers_module_1 = require("./careers/careers.module");
 const support_module_1 = require("./support/support.module");
 const uploads_module_1 = require("./uploads/uploads.module");
+const minio_module_1 = require("./modules/minio/minio.module");
+const ai_assistant_module_1 = require("./ai-assistant/ai-assistant.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -61,6 +63,8 @@ exports.AppModule = AppModule = __decorate([
             careers_module_1.CareersModule,
             support_module_1.SupportModule,
             uploads_module_1.UploadsModule,
+            minio_module_1.MinioModule,
+            ai_assistant_module_1.AiAssistantModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

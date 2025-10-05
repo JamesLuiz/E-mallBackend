@@ -58,6 +58,13 @@ export class KycDocuments {
   @Prop()
   verificationNotes: string;
 
+  // Social media fields
+  @Prop({ default: 0 })
+  followersCount: number;
+
+  @Prop({ default: 0 })
+  followingCount: number;
+
   @Prop({ default: Date.now })
   submittedAt: Date;
 
@@ -73,7 +80,7 @@ export class User {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ enum: UserRole, default: UserRole.CUSTOMER })
+  @Prop({ type: [String], enum: Object.values(UserRole), default: [UserRole.CUSTOMER] })
   roles: UserRole[];
 
   @Prop({ type: Profile })

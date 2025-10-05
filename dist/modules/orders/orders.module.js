@@ -12,7 +12,7 @@ const mongoose_1 = require("@nestjs/mongoose");
 const orders_controller_1 = require("./orders.controller");
 const orders_service_1 = require("./orders.service");
 const order_schema_1 = require("./schemas/order.schema");
-const products_module_1 = require("../products/products.module");
+const products_module_1 = require("../../products/products.module");
 const vendors_module_1 = require("../vendors/vendors.module");
 let OrdersModule = class OrdersModule {
 };

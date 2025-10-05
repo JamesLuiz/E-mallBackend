@@ -23,4 +23,11 @@
       "@/modules/*": ["src/modules/*"]
     }
   }
+,
+  "exclude": [
+    "e-mall",
+    "e-mall/**",
+    "dist",
+    "node_modules"
+  ]
 }

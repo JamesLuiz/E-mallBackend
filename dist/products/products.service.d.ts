@@ -1,26 +1,15 @@
 import { Model } from 'mongoose';
-<<<<<<< HEAD
-import { ProductDocument } from './schemas/product.schema';
-import { VendorsService } from '../vendors/vendors.service';
-import { PinataService } from '../uploads/pinata.service';
-=======
 import { ProductDocument, ProductImage } from './schemas/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
-import { PinataService } from '../uploads/pinata.service';
-import { VendorsService as ModuleVendorsService } from '../modules/vendors/vendors.service';
-import { FileUploadResult } from '../../common/services/pinata.service';
->>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
+import { VendorsService } from '../modules/vendors/vendors.service';
+import { MinioService, MinioUploadResult } from '../modules/minio/minio.service';
 export declare class ProductsService {
     private productModel;
     private vendorsService;
-    private pinataService;
-<<<<<<< HEAD
-    constructor(productModel: Model<ProductDocument>, vendorsService: VendorsService, pinataService: PinataService);
-    uploadImages(productId: string, userId: string, files: Array<Express.Multer.File>): Promise<any>;
-=======
-    constructor(productModel: Model<ProductDocument>, vendorsService: ModuleVendorsService, pinataService: PinataService);
+    private minioService;
+    constructor(productModel: Model<ProductDocument>, vendorsService: VendorsService, minioService: MinioService);
     create(userId: string, createProductDto: CreateProductDto): Promise<ProductDocument>;
     findAll(filter?: ProductFilterDto): Promise<ProductDocument[]>;
     findOne(id: string): Promise<ProductDocument>;
@@ -32,7 +21,7 @@ export declare class ProductsService {
     getCategories(): Promise<string[]>;
     updateInventory(productId: string, quantity: number): Promise<void>;
     uploadImages(productId: string, userId: string, files: Array<Express.Multer.File>): Promise<ProductDocument>;
-    addProductImages(productId: string, userId: string, uploadResults: FileUploadResult[]): Promise<ProductDocument>;
+    addProductImages(productId: string, userId: string, uploadResults: MinioUploadResult[]): Promise<ProductDocument>;
     setPrimaryImage(productId: string, userId: string, imageHash: string): Promise<ProductDocument>;
     removeProductImage(productId: string, userId: string, imageHash: string): Promise<ProductDocument>;
     getProductImages(productId: string): Promise<ProductImage[]>;
@@ -53,5 +42,4 @@ export declare class ProductsService {
     getVendorProductStats(userId: string): Promise<any>;
     getLowStockProducts(userId: string): Promise<ProductDocument[]>;
     duplicateProduct(productId: string, userId: string): Promise<ProductDocument>;
->>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
 }

@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,19 +18,26 @@ const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const bcrypt = require("bcrypt");
 const user_schema_1 = require("./schemas/user.schema");
+const follow_schema_1 = require("./schemas/follow.schema");
+const minio_service_1 = require("../minio/minio.service");
 const user_role_enum_1 = require("../../common/enums/user-role.enum");
-const pinata_service_1 = require("../uploads/pinata.service");
 let UsersService = class UsersService {
-    constructor(userModel, pinataService) {
+    constructor(userModel, followModel, minioService) {
         this.userModel = userModel;
-        this.pinataService = pinataService;
+        this.followModel = followModel;
+        this.minioService = minioService;
     }
     async create(createUserDto) {
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
         const createdUser = new this.userModel({
-            ...createUserDto,
+            email: createUserDto.email,
             password: hashedPassword,
             roles: createUserDto.roles || [user_role_enum_1.UserRole.CUSTOMER],
+            profile: {
+                firstName: createUserDto.firstName,
+                lastName: createUserDto.lastName,
+                phone: createUserDto.phone,
+            },
         });
         return createdUser.save();
     }
@@ -66,7 +72,7 @@ let UsersService = class UsersService {
         return updatedUser;
     }
     async uploadAvatar(userId, file) {
-        const { uri } = await this.pinataService.uploadFile(file);
+        const { uri } = await this.minioService.uploadFile(file, 'avatars');
         const updatedUser = await this.userModel
             .findByIdAndUpdate(userId, { avatar: uri }, { new: true })
             .select('-password')
@@ -216,12 +222,110 @@ let UsersService = class UsersService {
             throw new common_1.NotFoundException('User not found');
         }
     }
+    async followUser(followerId, followDto) {
+        const { userId: followingId } = followDto;
+        const userToFollow = await this.userModel.findById(followingId);
+        if (!userToFollow) {
+            throw new common_1.NotFoundException('User to follow not found');
+        }
+        const existingFollow = await this.followModel.findOne({
+            followerId: new mongoose_2.Types.ObjectId(followerId),
+            followingId: new mongoose_2.Types.ObjectId(followingId)
+        });
+        if (existingFollow) {
+            throw new common_1.BadRequestException('Already following this user');
+        }
+        const follow = new this.followModel({
+            followerId: new mongoose_2.Types.ObjectId(followerId),
+            followingId: new mongoose_2.Types.ObjectId(followingId)
+        });
+        await follow.save();
+        await this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } });
+        await this.userModel.findByIdAndUpdate(followingId, { $inc: { followersCount: 1 } });
+        return { message: 'Successfully followed user', follow };
+    }
+    async unfollowUser(followerId, followingId) {
+        const follow = await this.followModel.findOneAndDelete({
+            followerId: new mongoose_2.Types.ObjectId(followerId),
+            followingId: new mongoose_2.Types.ObjectId(followingId)
+        });
+        if (!follow) {
+            throw new common_1.BadRequestException('Not following this user');
+        }
+        await this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } });
+        await this.userModel.findByIdAndUpdate(followingId, { $inc: { followersCount: -1 } });
+        return { message: 'Successfully unfollowed user' };
+    }
+    async getFollowers(userId, page = 1, limit = 20) {
+        const skip = (page - 1) * limit;
+        const followers = await this.followModel
+            .find({ followingId: new mongoose_2.Types.ObjectId(userId) })
+            .populate('followerId', 'firstName lastName email avatar')
+            .sort({ followedAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .exec();
+        const totalFollowers = await this.followModel.countDocuments({
+            followingId: new mongoose_2.Types.ObjectId(userId)
+        });
+        return {
+            followers,
+            totalFollowers,
+            page,
+            totalPages: Math.ceil(totalFollowers / limit)
+        };
+    }
+    async getFollowing(userId, page = 1, limit = 20) {
+        const skip = (page - 1) * limit;
+        const following = await this.followModel
+            .find({ followerId: new mongoose_2.Types.ObjectId(userId) })
+            .populate('followingId', 'firstName lastName email avatar')
+            .sort({ followedAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .exec();
+        const totalFollowing = await this.followModel.countDocuments({
+            followerId: new mongoose_2.Types.ObjectId(userId)
+        });
+        return {
+            following,
+            totalFollowing,
+            page,
+            totalPages: Math.ceil(totalFollowing / limit)
+        };
+    }
+    async isFollowing(followerId, followingId) {
+        const follow = await this.followModel.findOne({
+            followerId: new mongoose_2.Types.ObjectId(followerId),
+            followingId: new mongoose_2.Types.ObjectId(followingId)
+        });
+        return !!follow;
+    }
+    async getFollowSuggestions(userId, limit = 10) {
+        const following = await this.followModel.find({
+            followerId: new mongoose_2.Types.ObjectId(userId)
+        }).select('followingId');
+        const followingIds = following.map(f => f.followingId);
+        followingIds.push(new mongoose_2.Types.ObjectId(userId));
+        const suggestions = await this.userModel
+            .find({
+            _id: { $nin: followingIds },
+            isActive: true
+        })
+            .select('firstName lastName email avatar followersCount')
+            .sort({ followersCount: -1 })
+            .limit(limit)
+            .exec();
+        return suggestions;
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(user_schema_1.User.name)),
-    __param(1, (0, common_1.Inject)((0, common_1.forwardRef)(() => pinata_service_1.PinataService))),
-    __metadata("design:paramtypes", [mongoose_2.Model, typeof (_a = typeof pinata_service_1.PinataService !== "undefined" && pinata_service_1.PinataService) === "function" ? _a : Object])
+    __param(1, (0, mongoose_1.InjectModel)(follow_schema_1.Follow.name)),
+    __metadata("design:paramtypes", [mongoose_2.Model,
+        mongoose_2.Model,
+        minio_service_1.MinioService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

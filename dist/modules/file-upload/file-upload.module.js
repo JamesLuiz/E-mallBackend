@@ -11,16 +11,16 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const file_upload_controller_1 = require("./file-upload.controller");
 const file_upload_service_1 = require("./file-upload.service");
-const pinata_service_1 = require("../../common/services/pinata.service");
+const minio_module_1 = require("../minio/minio.module");
 let FileUploadModule = class FileUploadModule {
 };
 exports.FileUploadModule = FileUploadModule;
 exports.FileUploadModule = FileUploadModule = __decorate([
     (0, common_1.Module)({
-        imports: [config_1.ConfigModule],
+        imports: [config_1.ConfigModule, minio_module_1.MinioModule],
         controllers: [file_upload_controller_1.FileUploadController],
-        providers: [file_upload_service_1.FileUploadService, pinata_service_1.PinataService],
-        exports: [file_upload_service_1.FileUploadService, pinata_service_1.PinataService],
+        providers: [file_upload_service_1.FileUploadService],
+        exports: [file_upload_service_1.FileUploadService],
     })
 ], FileUploadModule);
 //# sourceMappingURL=file-upload.module.js.map

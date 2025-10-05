@@ -11,32 +11,32 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileUploadService = void 0;
 const common_1 = require("@nestjs/common");
-const pinata_service_1 = require("../../common/services/pinata.service");
+const minio_service_1 = require("../minio/minio.service");
 let FileUploadService = class FileUploadService {
-    constructor(pinataService) {
-        this.pinataService = pinataService;
+    constructor(minioService) {
+        this.minioService = minioService;
     }
-    async uploadFile(file, fileType = pinata_service_1.FileType.GENERAL, metadata) {
+    async uploadFile(file) {
         try {
             if (!file) {
                 throw new common_1.BadRequestException('No file provided');
             }
-            return await this.pinataService.uploadFile(file, fileType, metadata);
+            return await this.minioService.uploadFile(file);
         }
         catch (error) {
             console.error('File upload error:', error);
             throw new common_1.BadRequestException(`File upload failed: ${error.message}`);
         }
     }
-    async uploadMultipleFiles(files, fileType = pinata_service_1.FileType.GENERAL, metadata) {
+    async uploadMultipleFiles(files) {
         if (!files || files.length === 0) {
             throw new common_1.BadRequestException('No files provided');
         }
-        return await this.pinataService.uploadMultipleFiles(files, fileType, metadata);
+        return await Promise.all(files.map((file) => this.minioService.uploadFile(file)));
     }
     async deleteFile(hash) {
         try {
-            return await this.pinataService.deleteFile(hash);
+            return true;
         }
         catch (error) {
             console.error('File deletion error:', error);
@@ -45,7 +45,7 @@ let FileUploadService = class FileUploadService {
     }
     async getFileInfo(hash) {
         try {
-            return await this.pinataService.getFileInfo(hash);
+            return null;
         }
         catch (error) {
             console.error('Get file info error:', error);
@@ -53,24 +53,24 @@ let FileUploadService = class FileUploadService {
         }
     }
     async uploadProfilePicture(file, userId) {
-        return this.uploadFile(file, pinata_service_1.FileType.PROFILE_PICTURE, { userId });
+        return this.minioService.uploadFile(file, 'users');
     }
     async uploadProductImages(files, productId, vendorId) {
-        return this.uploadMultipleFiles(files, pinata_service_1.FileType.PRODUCT_IMAGE, { productId, vendorId });
+        return Promise.all(files.map((f) => this.minioService.uploadFile(f, 'products')));
     }
     async uploadKycDocuments(files, userId, documentType) {
-        return this.uploadMultipleFiles(files, pinata_service_1.FileType.KYC_DOCUMENT, { userId, documentType });
+        return Promise.all(files.map((f) => this.minioService.uploadFile(f, 'kyc')));
     }
     async uploadVendorLogo(file, vendorId) {
-        return this.uploadFile(file, pinata_service_1.FileType.VENDOR_LOGO, { vendorId });
+        return this.minioService.uploadFile(file, 'vendors');
     }
     async uploadVendorBanner(file, vendorId) {
-        return this.uploadFile(file, pinata_service_1.FileType.VENDOR_BANNER, { vendorId });
+        return this.minioService.uploadFile(file, 'vendors');
     }
 };
 exports.FileUploadService = FileUploadService;
 exports.FileUploadService = FileUploadService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [pinata_service_1.PinataService])
+    __metadata("design:paramtypes", [minio_service_1.MinioService])
 ], FileUploadService);
 //# sourceMappingURL=file-upload.service.js.map

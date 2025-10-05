@@ -11,18 +11,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VendorsService = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const vendor_schema_1 = require("./schemas/vendor.schema");
-const pinata_service_1 = require("../uploads/pinata.service");
+const minio_service_1 = require("../minio/minio.service");
 let VendorsService = class VendorsService {
-    constructor(vendorModel, pinataService) {
+    constructor(vendorModel, minioService) {
         this.vendorModel = vendorModel;
-        this.pinataService = pinataService;
+        this.minioService = minioService;
     }
     async create(userId, businessName) {
         const existingVendor = await this.vendorModel.findOne({ userId });
@@ -360,7 +359,7 @@ let VendorsService = class VendorsService {
     }
     async uploadLogo(userId, file) {
         const vendor = await this.findByUserId(userId);
-        const { uri, hash } = await this.pinataService.uploadFile(file);
+        const { uri, hash } = await this.minioService.uploadFile(file, 'vendors');
         vendor.storeSettings.logo = uri;
         vendor.storeSettings.logoUri = uri;
         vendor.storeSettings.logoHash = hash;
@@ -369,7 +368,7 @@ let VendorsService = class VendorsService {
     }
     async uploadKycDocument(userId, file, type) {
         const vendor = await this.findByUserId(userId);
-        const { uri, hash } = await this.pinataService.uploadFile(file);
+        const { uri, hash } = await this.minioService.uploadFile(file, 'vendors');
         if (!vendor.kycDocuments)
             vendor.kycDocuments = {};
         if (type === 'identity') {
@@ -388,7 +387,7 @@ exports.VendorsService = VendorsService;
 exports.VendorsService = VendorsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(vendor_schema_1.Vendor.name)),
-    __param(1, (0, common_1.Inject)((0, common_1.forwardRef)(() => pinata_service_1.PinataService))),
-    __metadata("design:paramtypes", [mongoose_2.Model, typeof (_a = typeof pinata_service_1.PinataService !== "undefined" && pinata_service_1.PinataService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [mongoose_2.Model,
+        minio_service_1.MinioService])
 ], VendorsService);
 //# sourceMappingURL=vendors.service.js.map

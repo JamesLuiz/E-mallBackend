@@ -20,6 +20,8 @@ export declare class KycDocuments {
     proofOfAddressHash: string;
     verificationStatus: 'pending' | 'approved' | 'rejected';
     verificationNotes: string;
+    followersCount: number;
+    followingCount: number;
     submittedAt: Date;
     verifiedAt: Date;
 }

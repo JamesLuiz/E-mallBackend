@@ -1,7 +1,7 @@
 import { Model } from 'mongoose';
 import { OrderDocument } from './schemas/order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { ProductsService } from '../products/products.service';
+import { ProductsService } from '../../products/products.service';
 import { VendorsService } from '../vendors/vendors.service';
 export declare class OrdersService {
     private orderModel;

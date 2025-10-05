@@ -11,31 +11,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-<<<<<<< HEAD
-var _a;
-=======
->>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsService = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const product_schema_1 = require("./schemas/product.schema");
-<<<<<<< HEAD
-const vendors_service_1 = require("../vendors/vendors.service");
-const pinata_service_1 = require("../uploads/pinata.service");
-=======
-const pinata_service_1 = require("../uploads/pinata.service");
 const vendors_service_1 = require("../modules/vendors/vendors.service");
->>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
+const minio_service_1 = require("../modules/minio/minio.service");
 let ProductsService = class ProductsService {
-    constructor(productModel, vendorsService, pinataService) {
+    constructor(productModel, vendorsService, minioService) {
         this.productModel = productModel;
         this.vendorsService = vendorsService;
-        this.pinataService = pinataService;
+        this.minioService = minioService;
     }
-<<<<<<< HEAD
-=======
     async create(userId, createProductDto) {
         const vendor = await this.vendorsService.findByUserId(userId);
         const createdProduct = new this.productModel({
@@ -162,21 +151,18 @@ let ProductsService = class ProductsService {
     async updateInventory(productId, quantity) {
         await this.productModel.findByIdAndUpdate(productId, { $inc: { 'inventory.stock': -quantity } }).exec();
     }
->>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
     async uploadImages(productId, userId, files) {
         const product = await this.findOne(productId);
         const vendor = await this.vendorsService.findByUserId(userId);
         if (product.vendorId.toString() !== vendor._id.toString()) {
             throw new common_1.ForbiddenException('You can only update your own products');
         }
-        const imageResults = await Promise.all(files.map(file => this.pinataService.uploadFile(file)));
-        const imageUris = imageResults.map(r => r.uri);
+        const imageResults = await Promise.all(files.map(file => this.minioService.uploadFile(file, 'products')));
+        const imageUris = imageResults.map((r) => r.uri);
         product.images = [...(product.images || []), ...imageUris];
         await product.save();
         return product;
     }
-<<<<<<< HEAD
-=======
     async addProductImages(productId, userId, uploadResults) {
         const product = await this.findOne(productId);
         const vendor = await this.vendorsService.findByUserId(userId);
@@ -427,18 +413,13 @@ let ProductsService = class ProductsService {
         const duplicatedProduct = new this.productModel(productData);
         return duplicatedProduct.save();
     }
->>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
-<<<<<<< HEAD
-    __metadata("design:paramtypes", [mongoose_2.Model, typeof (_a = typeof vendors_service_1.VendorsService !== "undefined" && vendors_service_1.VendorsService) === "function" ? _a : Object, pinata_service_1.PinataService])
-=======
     __metadata("design:paramtypes", [mongoose_2.Model,
         vendors_service_1.VendorsService,
-        pinata_service_1.PinataService])
->>>>>>> 78160f189fb790d419dad7b1657b0833b54abdcb
+        minio_service_1.MinioService])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

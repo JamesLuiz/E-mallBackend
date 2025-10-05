@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { VendorsService } from '../vendors/vendors.service';
@@ -15,13 +16,27 @@ import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
+  private googleClient: OAuth2Client;
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private vendorsService: VendorsService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    // Initialize Google OAuth client with environment variables.
+    // Support both GOOGLE_CLIENT_ID and legacy CLIENT_ID naming in .env.
+  const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID') || this.configService.get<string>('CLIENT_ID') || process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
+  const clientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET') || this.configService.get<string>('CLIENT_SECRET') || process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET;
+    const callbackUrl = this.configService.get<string>('GOOGLE_CALLBACK_URL') || this.configService.get<string>('GOOGLE_REDIRECT_URI') || this.configService.get<string>('CLIENT_CALLBACK_URL');
 
-  private googleClient = new OAuth2Client();
+    if (!clientId || !clientSecret) {
+      // Defer throwing; some flows may only need ID token verification path, but warn in logs
+      console.warn('Google OAuth client id or secret not configured. Set GOOGLE_CLIENT_ID/CLIENT_ID and GOOGLE_CLIENT_SECRET/CLIENT_SECRET in env.');
+    }
+
+    this.googleClient = new OAuth2Client(clientId, clientSecret, callbackUrl);
+  }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
@@ -98,15 +113,23 @@ export class AuthService {
   }
 
   private async verifyGoogleIdToken(idToken: string): Promise<{ email: string; given_name?: string; family_name?: string; name?: string } | null> {
-    const ticket = await this.googleClient.verifyIdToken({ idToken, audience: undefined });
-    const payload = ticket.getPayload();
-    if (!payload || !payload.email) return null;
-    return {
-      email: payload.email,
-      given_name: payload.given_name,
-      family_name: payload.family_name,
-      name: payload.name,
-    } as any;
+    try {
+      const ticket = await this.googleClient.verifyIdToken({ 
+        idToken, 
+        audience: this.configService.get<string>('GOOGLE_CLIENT_ID') 
+      });
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) return null;
+      return {
+        email: payload.email,
+        given_name: payload.given_name,
+        family_name: payload.family_name,
+        name: payload.name,
+      } as any;
+    } catch (error) {
+      console.error('Google ID token verification failed:', error);
+      return null;
+    }
   }
 
   async googleSignInCustomer(dto: GoogleAuthDto) {
@@ -222,14 +245,89 @@ export class AuthService {
     return { message: 'Verification email resent' };
   }
 
-  // Google OAuth placeholders
+  // Google OAuth implementation
   async googleAuth() {
-    // TODO: Implement Google OAuth redirect logic
-    return { url: 'https://accounts.google.com/o/oauth2/v2/auth?...' };
+    const redirectUri = this.configService.get<string>('GOOGLE_CALLBACK_URL');
+    if (!redirectUri) {
+      // Provide a clearer error than letting Google respond with missing parameter
+      throw new BadRequestException('GOOGLE_CALLBACK_URL is not configured on the server. Set GOOGLE_CALLBACK_URL env to the backend callback URL (e.g. http://localhost:3000/api/auth/google/callback)');
+    }
+
+    const authUrl = this.googleClient.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+      ],
+      redirect_uri: redirectUri,
+    });
+    return { url: authUrl };
   }
 
-  async googleAuthCallback(query: any) {
-    // TODO: Implement Google OAuth callback logic
-    return { message: 'Google OAuth callback', query };
+  // Return public configuration values safe for client consumption
+  getPublicConfig() {
+    const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID') || this.configService.get<string>('CLIENT_ID');
+    return { googleClientId };
+  }
+
+  async googleAuthCallback(code: string, state?: string) {
+    try {
+      // Exchange authorization code for tokens
+      const { tokens } = await this.googleClient.getToken(code);
+      this.googleClient.setCredentials(tokens);
+
+      // Get user info from Google
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: tokens.id_token!,
+        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
+      });
+      const payload = ticket.getPayload();
+      
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+
+      // Check if user exists
+      let user: any = await this.usersService.findByEmail(payload.email);
+      const isNewUser = !user;
+
+      if (!user) {
+        // Create new user with Google profile
+        user = await this.usersService.create({
+          email: payload.email,
+          password: uuidv4(), // Random password for Google users
+          roles: [UserRole.CUSTOMER], // Default to customer
+          firstName: payload.given_name || payload.name?.split(' ')[0],
+          lastName: payload.family_name || payload.name?.split(' ').slice(1).join(' '),
+        } as any);
+      }
+
+      // Generate JWT tokens
+      const jwtPayload = { 
+        email: user.email, 
+        sub: user._id, 
+        roles: user.roles 
+      };
+      const accessToken = this.jwtService.sign(jwtPayload);
+      const refreshToken = this.jwtService.sign(jwtPayload, { 
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d' 
+      });
+
+      // Update refresh token
+      await this.usersService.updateRefreshToken(user._id.toString(), refreshToken);
+
+      const { password, ...userResult } = (user as any).toObject();
+
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        user: userResult,
+        isNewUser,
+        message: isNewUser ? 'Account created successfully' : 'Login successful',
+      };
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      throw new UnauthorizedException('Google authentication failed');
+    }
   }
 }

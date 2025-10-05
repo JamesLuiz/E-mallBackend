@@ -10,15 +10,16 @@ exports.UploadsModule = void 0;
 const common_1 = require("@nestjs/common");
 const uploads_controller_1 = require("./uploads.controller");
 const uploads_service_1 = require("./uploads.service");
-const pinata_service_1 = require("./pinata.service");
+const minio_module_1 = require("../modules/minio/minio.module");
 let UploadsModule = class UploadsModule {
 };
 exports.UploadsModule = UploadsModule;
 exports.UploadsModule = UploadsModule = __decorate([
     (0, common_1.Module)({
+        imports: [minio_module_1.MinioModule],
         controllers: [uploads_controller_1.UploadsController],
-        providers: [uploads_service_1.UploadsService, pinata_service_1.PinataService],
-        exports: [pinata_service_1.PinataService],
+        providers: [uploads_service_1.UploadsService],
+        exports: [],
     })
 ], UploadsModule);
 //# sourceMappingURL=uploads.module.js.map

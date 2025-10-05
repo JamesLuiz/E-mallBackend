@@ -37,8 +37,11 @@ export declare class Subscription {
 export declare class Vendor {
     userId: Types.ObjectId;
     businessName: string;
+    contactFullName: string;
+    businessPhoneNumber: string;
     businessDescription: string;
     businessAddress: string;
+    businessCategory: string;
     storeSettings: StoreSettings;
     kycDocuments: VendorKycDocuments;
     subscription: Subscription;

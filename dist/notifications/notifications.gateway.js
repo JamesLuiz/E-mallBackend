@@ -8,7 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
@@ -44,7 +43,7 @@ let NotificationsGateway = class NotificationsGateway {
 exports.NotificationsGateway = NotificationsGateway;
 __decorate([
     (0, websockets_1.WebSocketServer)(),
-    __metadata("design:type", typeof (_a = typeof socket_io_1.Server !== "undefined" && socket_io_1.Server) === "function" ? _a : Object)
+    __metadata("design:type", socket_io_1.Server)
 ], NotificationsGateway.prototype, "server", void 0);
 exports.NotificationsGateway = NotificationsGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({

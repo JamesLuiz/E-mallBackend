@@ -86,6 +86,14 @@ __decorate([
     __metadata("design:type", String)
 ], KycDocuments.prototype, "verificationNotes", void 0);
 __decorate([
+    (0, mongoose_1.Prop)({ default: 0 }),
+    __metadata("design:type", Number)
+], KycDocuments.prototype, "followersCount", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: 0 }),
+    __metadata("design:type", Number)
+], KycDocuments.prototype, "followingCount", void 0);
+__decorate([
     (0, mongoose_1.Prop)({ default: Date.now }),
     __metadata("design:type", Date)
 ], KycDocuments.prototype, "submittedAt", void 0);
@@ -108,7 +116,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "password", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ enum: user_role_enum_1.UserRole, default: user_role_enum_1.UserRole.CUSTOMER }),
+    (0, mongoose_1.Prop)({ type: [String], enum: Object.values(user_role_enum_1.UserRole), default: [user_role_enum_1.UserRole.CUSTOMER] }),
     __metadata("design:type", Array)
 ], User.prototype, "roles", void 0);
 __decorate([

@@ -1,18 +1,21 @@
 import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { User, UserDocument, KycDocuments } from './schemas/user.schema';
+import { Follow, FollowDocument } from './schemas/follow.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { FollowUserDto } from './dto/follow-user.dto';
 import { MinioService, MinioUploadResult } from '../minio/minio.service';
 import { UserRole } from '../../common/enums/user-role.enum';
-import { PinataService } from '../uploads/pinata.service';
+
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
     private minioService: MinioService,
   ) {}
 
@@ -275,5 +278,136 @@ export class UsersService {
     if (!result) {
       throw new NotFoundException('User not found');
     }
+  }
+
+  // Follow system methods
+  async followUser(followerId: string, followDto: FollowUserDto) {
+    const { userId: followingId } = followDto;
+
+    // Check if user exists
+    const userToFollow = await this.userModel.findById(followingId);
+    if (!userToFollow) {
+      throw new NotFoundException('User to follow not found');
+    }
+
+    // Check if already following
+    const existingFollow = await this.followModel.findOne({
+      followerId: new Types.ObjectId(followerId),
+      followingId: new Types.ObjectId(followingId)
+    });
+
+    if (existingFollow) {
+      throw new BadRequestException('Already following this user');
+    }
+
+    // Create follow relationship
+    const follow = new this.followModel({
+      followerId: new Types.ObjectId(followerId),
+      followingId: new Types.ObjectId(followingId)
+    });
+
+    await follow.save();
+
+    // Update follower and following counts
+    await this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } });
+    await this.userModel.findByIdAndUpdate(followingId, { $inc: { followersCount: 1 } });
+
+    return { message: 'Successfully followed user', follow };
+  }
+
+  async unfollowUser(followerId: string, followingId: string) {
+    // Check if follow relationship exists
+    const follow = await this.followModel.findOneAndDelete({
+      followerId: new Types.ObjectId(followerId),
+      followingId: new Types.ObjectId(followingId)
+    });
+
+    if (!follow) {
+      throw new BadRequestException('Not following this user');
+    }
+
+    // Update follower and following counts
+    await this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } });
+    await this.userModel.findByIdAndUpdate(followingId, { $inc: { followersCount: -1 } });
+
+    return { message: 'Successfully unfollowed user' };
+  }
+
+  async getFollowers(userId: string, page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+    
+    const followers = await this.followModel
+      .find({ followingId: new Types.ObjectId(userId) })
+      .populate('followerId', 'firstName lastName email avatar')
+      .sort({ followedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    const totalFollowers = await this.followModel.countDocuments({
+      followingId: new Types.ObjectId(userId)
+    });
+
+    return {
+      followers,
+      totalFollowers,
+      page,
+      totalPages: Math.ceil(totalFollowers / limit)
+    };
+  }
+
+  async getFollowing(userId: string, page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+    
+    const following = await this.followModel
+      .find({ followerId: new Types.ObjectId(userId) })
+      .populate('followingId', 'firstName lastName email avatar')
+      .sort({ followedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    const totalFollowing = await this.followModel.countDocuments({
+      followerId: new Types.ObjectId(userId)
+    });
+
+    return {
+      following,
+      totalFollowing,
+      page,
+      totalPages: Math.ceil(totalFollowing / limit)
+    };
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const follow = await this.followModel.findOne({
+      followerId: new Types.ObjectId(followerId),
+      followingId: new Types.ObjectId(followingId)
+    });
+
+    return !!follow;
+  }
+
+  async getFollowSuggestions(userId: string, limit: number = 10) {
+    // Get users that the current user is not following
+    const following = await this.followModel.find({
+      followerId: new Types.ObjectId(userId)
+    }).select('followingId');
+
+    const followingIds = following.map(f => f.followingId);
+    followingIds.push(new Types.ObjectId(userId)); // Exclude self
+
+    // Get users with most followers (popular users)
+    const suggestions = await this.userModel
+      .find({
+        _id: { $nin: followingIds },
+        isActive: true
+      })
+      .select('firstName lastName email avatar followersCount')
+      .sort({ followersCount: -1 })
+      .limit(limit)
+      .exec();
+
+    return suggestions;
   }
 }

@@ -11,33 +11,66 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegisterDto = void 0;
 const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
 class RegisterDto {
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
-    (0, class_validator_1.IsEmail)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'User email address',
+        example: 'user@example.com'
+    }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "email", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'User password',
+        example: 'password123',
+        minLength: 6
+    }),
+    (0, class_validator_1.IsString)({ message: 'Password must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    (0, class_validator_1.MinLength)(6, { message: 'Password must be at least 6 characters long' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'User first name',
+        example: 'John'
+    }),
+    (0, class_validator_1.IsString)({ message: 'First name must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'First name is required' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "firstName", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'User last name',
+        example: 'Doe'
+    }),
+    (0, class_validator_1.IsString)({ message: 'Last name must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Last name is required' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "lastName", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'User phone number',
+        example: '+2348012345678',
+        required: false
+    }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsString)({ message: 'Phone number must be a string' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "phoneNumber", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'User date of birth',
+        example: '1990-01-01',
+        required: false
+    }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsDateString)({}, { message: 'Please provide a valid date' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "dateOfBirth", void 0);
 //# sourceMappingURL=register.dto.js.map

@@ -11,11 +11,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VerifyEmailDto = void 0;
 const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
 class VerifyEmailDto {
 }
 exports.VerifyEmailDto = VerifyEmailDto;
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'Email verification token',
+        example: 'abc123def456'
+    }),
+    (0, class_validator_1.IsString)({ message: 'Token must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Token is required' }),
     __metadata("design:type", String)
 ], VerifyEmailDto.prototype, "token", void 0);
 //# sourceMappingURL=verify-email.dto.js.map

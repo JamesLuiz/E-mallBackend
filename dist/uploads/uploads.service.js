@@ -11,13 +11,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UploadsService = void 0;
 const common_1 = require("@nestjs/common");
-const pinata_service_1 = require("./pinata.service");
+const minio_service_1 = require("../modules/minio/minio.service");
 let UploadsService = class UploadsService {
-    constructor(pinataService) {
-        this.pinataService = pinataService;
+    constructor(minioService) {
+        this.minioService = minioService;
     }
     async uploadImage(file, folder = 'general') {
-        return this.pinataService.uploadFile(file);
+        return this.minioService.uploadFile(file, folder);
     }
     async uploadMultipleImages(files, folder = 'general') {
         return Promise.all(files.map(file => this.uploadImage(file, folder)));
@@ -28,6 +28,6 @@ let UploadsService = class UploadsService {
 exports.UploadsService = UploadsService;
 exports.UploadsService = UploadsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [pinata_service_1.PinataService])
+    __metadata("design:paramtypes", [minio_service_1.MinioService])
 ], UploadsService);
 //# sourceMappingURL=uploads.service.js.map

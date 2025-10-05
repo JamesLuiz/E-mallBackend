@@ -5,41 +5,37 @@ export declare class FileUploadController {
     uploadSingle(file: Express.Multer.File): Promise<{
         uri: string;
         hash: string;
-        size: number;
-        originalName: string;
+        originalName?: string;
         message: string;
     }>;
     uploadMultiple(files: Express.Multer.File[]): Promise<{
         message: string;
-        files: import("../../common/services/pinata.service").FileUploadResult[];
+        files: import("../minio/minio.service").MinioUploadResult[];
     }>;
     uploadProfilePicture(file: Express.Multer.File, userId: string): Promise<{
         uri: string;
         hash: string;
-        size: number;
-        originalName: string;
+        originalName?: string;
         message: string;
     }>;
     uploadKycDocuments(files: Express.Multer.File[], documentType: string, userId: string): Promise<{
         message: string;
-        documents: import("../../common/services/pinata.service").FileUploadResult[];
+        documents: import("../minio/minio.service").MinioUploadResult[];
     }>;
     uploadProductImages(files: Express.Multer.File[], productId: string, userId: string): Promise<{
         message: string;
-        images: import("../../common/services/pinata.service").FileUploadResult[];
+        images: import("../minio/minio.service").MinioUploadResult[];
     }>;
     uploadVendorLogo(file: Express.Multer.File, userId: string): Promise<{
         uri: string;
         hash: string;
-        size: number;
-        originalName: string;
+        originalName?: string;
         message: string;
     }>;
     uploadVendorBanner(file: Express.Multer.File, userId: string): Promise<{
         uri: string;
         hash: string;
-        size: number;
-        originalName: string;
+        originalName?: string;
         message: string;
     }>;
 }

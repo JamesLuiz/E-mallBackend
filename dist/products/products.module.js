@@ -13,7 +13,7 @@ const products_controller_1 = require("./products.controller");
 const products_service_1 = require("./products.service");
 const product_schema_1 = require("./schemas/product.schema");
 const vendors_module_1 = require("../modules/vendors/vendors.module");
-const uploads_module_1 = require("../uploads/uploads.module");
+const minio_module_1 = require("../modules/minio/minio.module");
 let ProductsModule = class ProductsModule {
 };
 exports.ProductsModule = ProductsModule;
@@ -22,7 +22,7 @@ exports.ProductsModule = ProductsModule = __decorate([
         imports: [
             mongoose_1.MongooseModule.forFeature([{ name: product_schema_1.Product.name, schema: product_schema_1.ProductSchema }]),
             vendors_module_1.VendorsModule,
-            uploads_module_1.UploadsModule,
+            minio_module_1.MinioModule,
         ],
         controllers: [products_controller_1.ProductsController],
         providers: [products_service_1.ProductsService],
