@@ -125,6 +125,14 @@ __decorate([
     (0, mongoose_1.Prop)({ default: 0 }),
     __metadata("design:type", Number)
 ], Article.prototype, "trendingScore", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Date }),
+    __metadata("design:type", Date)
+], Article.prototype, "createdAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Date }),
+    __metadata("design:type", Date)
+], Article.prototype, "updatedAt", void 0);
 exports.Article = Article = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Article);

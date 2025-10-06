@@ -75,7 +75,7 @@ export declare class BlogService {
             _id: any;
             title: string;
             author: Types.ObjectId;
-            createdAt: any;
+            createdAt: Date;
             publishedAt: Date;
         };
         metrics: {

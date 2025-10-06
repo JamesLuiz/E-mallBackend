@@ -74,7 +74,7 @@ export declare class BlogController {
             _id: any;
             title: string;
             author: import("mongoose").Types.ObjectId;
-            createdAt: any;
+            createdAt: Date;
             publishedAt: Date;
         };
         metrics: {
