@@ -89,6 +89,13 @@ export class Article {
 
   @Prop({ default: 0 })
   trendingScore: number; // For trending algorithm
+
+  // Timestamps (automatically added by Mongoose when timestamps: true)
+  @Prop({ type: Date })
+  createdAt: Date;
+
+  @Prop({ type: Date })
+  updatedAt: Date;
 }
 
 export const ArticleSchema = SchemaFactory.createForClass(Article);
